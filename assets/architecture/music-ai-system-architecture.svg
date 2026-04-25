@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2280" height="1220" viewBox="0 0 2280 1220" role="img" aria-labelledby="title desc">
+  <title id="title">Applied Music AI System Architecture</title>
+  <desc id="desc">A clear system architecture diagram showing the runtime music recommendation flow, the supporting data sources, the reliability checks, and the human review loop.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 12 12" refX="9.5" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#29465b" />
+    </marker>
+    <style>
+      .bg { fill: #f4f7fb; }
+      .frame { fill: #ffffff; stroke: #d9e2ec; stroke-width: 2; }
+      .lane { fill: #fbfcfe; stroke: #d9e2ec; stroke-width: 2; }
+      .input { fill: #eef7f1; stroke: #4f8c73; stroke-width: 2; }
+      .data { fill: #edf4fb; stroke: #4c79a8; stroke-width: 2; }
+      .process { fill: #fff5e6; stroke: #c97f19; stroke-width: 2; }
+      .decision { fill: #f8eef5; stroke: #a95587; stroke-width: 2; }
+      .output { fill: #f1eefb; stroke: #7259c2; stroke-width: 2; }
+      .review { fill: #f7f3ea; stroke: #9d7b42; stroke-width: 2; }
+      .title { font: 700 34px Arial, sans-serif; fill: #17212b; }
+      .subtitle { font: 400 17px Arial, sans-serif; fill: #566473; }
+      .section { font: 700 22px Arial, sans-serif; fill: #17212b; }
+      .label { font: 700 18px Arial, sans-serif; fill: #17212b; }
+      .meta { font: 600 13px Arial, sans-serif; fill: #5c6a79; letter-spacing: 1.1px; }
+      .body { font: 400 15px Arial, sans-serif; fill: #243240; }
+      .small { font: 400 13px Arial, sans-serif; fill: #586574; }
+      .tiny { font: 400 12px Arial, sans-serif; fill: #6a7784; }
+      .solid { stroke: #29465b; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; fill: none; marker-end: url(#arrow); }
+      .dashed { stroke: #6b7c8d; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 10 8; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="2280" height="1220" />
+  <rect class="frame" x="38" y="40" width="2204" height="1080" rx="28" />
+
+  <text class="title" x="88" y="98">Applied Music AI System</text>
+  <text class="subtitle" x="88" y="132">Retrieval-augmented recommendation workflow with transparent scoring, reliability checks, testing, and human review.</text>
+
+  <rect class="lane" x="78" y="170" width="2124" height="620" rx="22" />
+  <text class="section" x="108" y="210">Runtime Recommendation Flow</text>
+  <text class="small" x="108" y="236">Solid arrows show the main recommendation path through parsing, retrieval, scoring, reliability checks, and final output.</text>
+
+  <rect class="lane" x="78" y="822" width="2124" height="250" rx="22" />
+  <text class="section" x="108" y="862">Human Oversight and Reliability Validation</text>
+  <text class="small" x="108" y="888">Dashed arrows show how testing and reviewer findings feed back into later system improvements.</text>
+
+  <rect class="input" x="120" y="326" width="220" height="188" rx="18" />
+  <text class="meta" x="146" y="356">INPUT</text>
+  <text class="label" x="146" y="388">User Request</text>
+  <text class="body" x="146" y="420">Natural-language prompt</text>
+  <text class="body" x="146" y="444">for a mood, activity,</text>
+  <text class="body" x="146" y="468">or listening goal.</text>
+  <text class="small" x="146" y="492">Entry: `src/main.py`</text>
+
+  <rect class="process" x="400" y="326" width="250" height="188" rx="18" />
+  <text class="meta" x="426" y="356">STEP 1</text>
+  <text class="label" x="426" y="388">Intent Parser</text>
+  <text class="body" x="426" y="420">Extracts genre, mood,</text>
+  <text class="body" x="426" y="444">energy, acoustic intent,</text>
+  <text class="body" x="426" y="468">activities, and exclusions.</text>
+  <text class="small" x="426" y="492">`parse_user_query()`</text>
+
+  <rect class="data" x="710" y="326" width="280" height="188" rx="18" />
+  <text class="meta" x="736" y="356">STEP 2</text>
+  <text class="label" x="736" y="388">Retriever</text>
+  <text class="body" x="736" y="420">Matches parsed intent</text>
+  <text class="body" x="736" y="444">to evidence using tags,</text>
+  <text class="body" x="736" y="468">mood, genre, and energy cues.</text>
+  <text class="small" x="736" y="492">`retrieve_song_evidence()`</text>
+
+  <rect class="process" x="1050" y="326" width="300" height="188" rx="18" />
+  <text class="meta" x="1076" y="356">STEP 3</text>
+  <text class="label" x="1076" y="388">Transparent Scoring</text>
+  <text class="body" x="1076" y="420">Scores songs using genre,</text>
+  <text class="body" x="1076" y="444">mood, energy, acousticness,</text>
+  <text class="body" x="1076" y="468">and advanced song features.</text>
+  <text class="small" x="1076" y="492">`score_song()` in `src/recommender.py`</text>
+
+  <rect class="process" x="1410" y="326" width="300" height="188" rx="18" />
+  <text class="meta" x="1436" y="356">STEP 4</text>
+  <text class="label" x="1436" y="388">Fusion and Reranking</text>
+  <text class="body" x="1436" y="420">Adds retrieval bonuses,</text>
+  <text class="body" x="1436" y="444">applies diversity penalties,</text>
+  <text class="body" x="1436" y="468">and preserves genre intent.</text>
+  <text class="small" x="1436" y="492">`recommend_songs(...)` + safeguard</text>
+
+  <rect class="decision" x="1770" y="306" width="320" height="228" rx="18" />
+  <text class="meta" x="1796" y="336">STEP 5</text>
+  <text class="label" x="1796" y="368">Reliability Check</text>
+  <text class="body" x="1796" y="400">Grounds explanations</text>
+  <text class="body" x="1796" y="424">with retrieved evidence,</text>
+  <text class="body" x="1796" y="448">reruns the pipeline for</text>
+  <text class="body" x="1796" y="472">consistency, and warns</text>
+  <text class="body" x="1796" y="496">about thin catalog coverage.</text>
+  <text class="small" x="1796" y="520">`_evaluate_reliability()`</text>
+
+  <rect class="data" x="420" y="570" width="250" height="164" rx="18" />
+  <text class="meta" x="446" y="600">DATA SOURCE</text>
+  <text class="label" x="446" y="632">Song Catalog</text>
+  <text class="body" x="446" y="664">Structured song metadata</text>
+  <text class="body" x="446" y="688">used directly by the scorer.</text>
+  <text class="small" x="446" y="714">`data/songs.csv`</text>
+
+  <rect class="data" x="740" y="570" width="280" height="164" rx="18" />
+  <text class="meta" x="766" y="600">DATA SOURCE</text>
+  <text class="label" x="766" y="632">Knowledge Base</text>
+  <text class="body" x="766" y="664">Evidence text, activity tags,</text>
+  <text class="body" x="766" y="688">scene notes, and caution context.</text>
+  <text class="small" x="766" y="714">`data/song_knowledge_base.json`</text>
+
+  <rect class="output" x="1170" y="570" width="900" height="164" rx="18" />
+  <text class="meta" x="1198" y="600">OUTPUT</text>
+  <text class="label" x="1198" y="630">Recommendations, Evidence,</text>
+  <text class="label" x="1198" y="654">Reliability Summary, and Run Log</text>
+  <text class="body" x="1198" y="682">Terminal output includes ranked songs, explanation strings, retrieved evidence, and warnings.</text>
+  <text class="body" x="1198" y="706">Each run is also logged as a JSON trace in `logs/music_ai_runs/*.json`.</text>
+  <text class="small" x="1198" y="728">Main orchestrator: `run_music_ai_system()`</text>
+
+  <path class="solid" d="M 340 420 L 400 420" />
+  <path class="solid" d="M 650 420 L 710 420" />
+  <path class="solid" d="M 990 420 L 1050 420" />
+  <path class="solid" d="M 1350 420 L 1410 420" />
+  <path class="solid" d="M 1710 420 L 1770 420" />
+  <path class="solid" d="M 1930 534 L 1930 570" />
+  <path class="solid" d="M 545 570 L 545 548 L 1200 548 L 1200 514" />
+  <path class="solid" d="M 880 570 L 880 514" />
+
+  <rect class="review" x="120" y="916" width="320" height="112" rx="18" />
+  <text class="meta" x="146" y="946">TESTING</text>
+  <text class="label" x="146" y="978">Automated Reliability Suite</text>
+  <text class="body" x="146" y="1004">Runs `pytest` and scenario-based reliability checks.</text>
+
+  <rect class="review" x="500" y="916" width="340" height="112" rx="18" />
+  <text class="meta" x="526" y="946">HUMAN CHECKPOINT</text>
+  <text class="label" x="526" y="978">Student or Reviewer</text>
+  <text class="body" x="526" y="1004">Inspects recommendations, warnings, and run logs.</text>
+
+  <rect class="review" x="900" y="916" width="360" height="112" rx="18" />
+  <text class="meta" x="926" y="946">ARTIFACTS</text>
+  <text class="label" x="926" y="978">Project Documentation</text>
+  <text class="body" x="926" y="1004">README, model card, reflection, and architecture assets.</text>
+
+  <rect class="review" x="1320" y="916" width="700" height="112" rx="18" />
+  <text class="meta" x="1346" y="946">IMPROVEMENT LOOP</text>
+  <text class="label" x="1346" y="978">Update Data, Rules, Guardrails, or Explanations</text>
+  <text class="body" x="1346" y="1004">Reviewer findings can refine retrieval text, scoring behavior, warnings, and written artifacts.</text>
+
+  <path class="dashed" d="M 1620 734 L 1620 902 L 670 902 L 670 916" />
+  <path class="dashed" d="M 280 916 L 280 902 L 1320 902" />
+  <path class="dashed" d="M 670 916 L 670 902 L 1320 902" />
+  <path class="dashed" d="M 1260 972 L 1320 972" />
+  <path class="dashed" d="M 1670 916 L 1670 734 L 880 734" />
+  <path class="dashed" d="M 1810 916 L 1810 734 L 1200 734" />
+
+  <circle cx="120" cy="1050" r="7" fill="#29465b" />
+  <text class="tiny" x="138" y="1055">Live system data flow</text>
+  <circle cx="324" cy="1050" r="7" fill="#ffffff" stroke="#6b7c8d" stroke-width="2.5" />
+  <text class="tiny" x="342" y="1055">Human review and testing loop</text>
+</svg>

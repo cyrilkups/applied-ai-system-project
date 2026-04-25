@@ -1,0 +1,19 @@
+id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness,popularity,release_decade,mood_tags,instrumentalness,live_energy,lyrical_density,era_affinity
+1,Sunrise City,Neon Echo,pop,happy,0.82,118,0.84,0.79,0.18,92,2010,happy|uplifting|bright,0.08,0.78,0.74,0.88
+2,Midnight Coding,LoRoom,lofi,chill,0.42,78,0.56,0.62,0.71,68,2010,chill|focused|nostalgic,0.72,0.18,0.22,0.73
+3,Storm Runner,Voltline,rock,intense,0.91,152,0.48,0.66,0.10,76,2000,aggressive|driving|defiant,0.22,0.86,0.68,0.81
+4,Library Rain,Paper Lanterns,lofi,chill,0.35,72,0.60,0.58,0.86,61,2000,calm|nostalgic|study,0.81,0.12,0.18,0.68
+5,Gym Hero,Max Pulse,pop,intense,0.93,132,0.77,0.88,0.05,95,2020,energetic|motivational|bright,0.05,0.91,0.82,0.90
+6,Spacewalk Thoughts,Orbit Bloom,ambient,chill,0.28,60,0.65,0.41,0.92,55,1990,dreamy|floating|meditative,0.94,0.08,0.10,0.64
+7,Coffee Shop Stories,Slow Stereo,jazz,relaxed,0.37,90,0.71,0.54,0.89,59,1970,warm|nostalgic|smoky,0.66,0.22,0.45,0.85
+8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22,83,1980,retro|moody|driving,0.88,0.54,0.20,0.96
+9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78,64,2010,focused|steady|calm,0.77,0.14,0.16,0.71
+10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35,88,2010,upbeat|romantic|nostalgic,0.12,0.64,0.77,0.82
+11,City Cipher,Kilo Verse,hip hop,confident,0.74,96,0.68,0.83,0.12,86,2020,confident|lyrical|urban,0.09,0.74,0.91,0.87
+12,Glass Morning,Aurora Vale,classical,dreamy,0.22,68,0.58,0.20,0.97,47,1900,elegant|dreamy|timeless,0.98,0.05,0.05,0.99
+13,Open Road Anthem,Cedar Line,country,uplifting,0.63,104,0.79,0.65,0.44,73,2010,road-trip|uplifting|honest,0.18,0.68,0.79,0.74
+14,Neon Pulse Circuit,Static Bloom,edm,celebratory,0.95,128,0.86,0.91,0.03,90,2020,party|euphoric|pulsing,0.28,0.97,0.12,0.93
+15,Fireside Letters,Willow Thread,folk,nostalgic,0.33,76,0.62,0.39,0.94,57,1970,nostalgic|storytelling|acoustic,0.34,0.24,0.86,0.88
+16,Velvet Hour,Sable Coast,r&b,romantic,0.57,92,0.72,0.74,0.28,82,2000,smooth|romantic|late-night,0.19,0.46,0.72,0.79
+17,Golden Steps,Luna Mar,latin,playful,0.81,116,0.83,0.87,0.19,79,2010,playful|festive|dance,0.14,0.83,0.58,0.77
+18,Iron Riot,Black Forge,metal,aggressive,0.97,168,0.31,0.52,0.02,88,2000,aggressive|anthemic|raw,0.31,0.96,0.41,0.92

@@ -1,0 +1,200 @@
+[
+  {
+    "song_id": 1,
+    "descriptor": "Bright pop anthem with a sunrise commute feel and fast, uplifting hooks.",
+    "activity_tags": ["commute", "morning", "boost", "run"],
+    "scene_tags": ["sunrise", "city", "uplifting", "bright"],
+    "evidence": [
+      "Works well when the listener wants upbeat pop energy without harsh distortion.",
+      "Strong fit for morning momentum, quick confidence boosts, and happy city-walk moments."
+    ],
+    "avoid_for": ["sleep", "deep-focus", "meditation"]
+  },
+  {
+    "song_id": 2,
+    "descriptor": "Soft lofi groove built for late-night coding, studying, and quiet concentration.",
+    "activity_tags": ["coding", "study", "late-night", "focus"],
+    "scene_tags": ["lofi", "nostalgic", "headphones", "calm"],
+    "evidence": [
+      "Low live energy and mellow pacing make it reliable background music for sustained focus.",
+      "The chill and focused profile supports writing, coding, and reading without pulling attention away."
+    ],
+    "avoid_for": ["party", "sprint-workout"]
+  },
+  {
+    "song_id": 3,
+    "descriptor": "Driven rock track made for intense workouts, big pushes, and dramatic momentum.",
+    "activity_tags": ["workout", "drive", "push", "hype"],
+    "scene_tags": ["rock", "aggressive", "defiant", "driving"],
+    "evidence": [
+      "Near-maximum energy and a defiant mood make it a strong match for high-adrenaline requests.",
+      "Best when the user wants something forceful, loud, and action-oriented."
+    ],
+    "avoid_for": ["sleep", "quiet-study"]
+  },
+  {
+    "song_id": 4,
+    "descriptor": "Rainy-day lofi instrumental for reading, library sessions, and low-stress focus.",
+    "activity_tags": ["reading", "study", "library", "focus"],
+    "scene_tags": ["rainy-day", "calm", "nostalgic", "soft"],
+    "evidence": [
+      "High acousticness and very low energy make it one of the safest options for quiet background listening.",
+      "Its study-friendly mood works best when the listener wants concentration instead of stimulation."
+    ],
+    "avoid_for": ["gym", "party"]
+  },
+  {
+    "song_id": 5,
+    "descriptor": "Explosive pop workout song designed for the gym, fast runs, and motivational bursts.",
+    "activity_tags": ["gym", "run", "workout", "motivation"],
+    "scene_tags": ["energetic", "bright", "motivational", "power"],
+    "evidence": [
+      "Very high energy plus low acousticness make it ideal for intense movement and high-tempo routines.",
+      "The track is strongest when a user asks for hype, motivation, or a punchy pop boost."
+    ],
+    "avoid_for": ["sleep", "deep-focus", "meditation"]
+  },
+  {
+    "song_id": 6,
+    "descriptor": "Ambient drift for meditation, stargazing, journaling, and slow reflective listening.",
+    "activity_tags": ["meditation", "sleep", "journaling", "stargazing"],
+    "scene_tags": ["dreamy", "floating", "meditative", "spacey"],
+    "evidence": [
+      "Extremely high instrumentalness and low live energy support calm, immersive background use.",
+      "Best for requests centered on stillness, reflection, or spacious late-night atmosphere."
+    ],
+    "avoid_for": ["workout", "party", "commute-rush"]
+  },
+  {
+    "song_id": 7,
+    "descriptor": "Warm jazz café track for reading, conversation, and relaxed weekend mornings.",
+    "activity_tags": ["brunch", "relax", "conversation", "reading"],
+    "scene_tags": ["warm", "nostalgic", "cafe", "easygoing"],
+    "evidence": [
+      "Its mellow energy and smoky warmth make it a natural fit for laid-back social or solo time.",
+      "Useful when the listener wants something acoustic, human, and gently nostalgic."
+    ],
+    "avoid_for": ["max-intensity-workout", "festival"]
+  },
+  {
+    "song_id": 8,
+    "descriptor": "Retro synthwave for solo night drives, neon city lights, and moody movement.",
+    "activity_tags": ["night-drive", "solo-drive", "commute", "reflection"],
+    "scene_tags": ["retro", "moody", "city-lights", "driving"],
+    "evidence": [
+      "The retro mood and steady driving pulse make it a strong late-night travel track.",
+      "It fits best when the request mixes motion, moodiness, and cinematic atmosphere."
+    ],
+    "avoid_for": ["quiet-study", "sleep"]
+  },
+  {
+    "song_id": 9,
+    "descriptor": "Steady lofi loop for coding sprints, planning blocks, and calm concentration.",
+    "activity_tags": ["coding", "study", "planning", "focus"],
+    "scene_tags": ["focused", "steady", "calm", "productive"],
+    "evidence": [
+      "The focused tag and restrained energy keep it useful during heads-down work.",
+      "A good fit when the listener wants something more structured than dreamy ambient music."
+    ],
+    "avoid_for": ["party", "heavy-workout"]
+  },
+  {
+    "song_id": 10,
+    "descriptor": "Shimmering indie-pop song for rooftop hangs, city walks, and upbeat evenings.",
+    "activity_tags": ["date-night", "city-walk", "summer-evening", "friend-hang"],
+    "scene_tags": ["upbeat", "romantic", "nostalgic", "sparkly"],
+    "evidence": [
+      "Balances happy energy with a softer romantic glow, making it more flexible than pure gym-pop.",
+      "A strong choice when the listener wants pop brightness with a little emotional warmth."
+    ],
+    "avoid_for": ["sleep", "deep-focus"]
+  },
+  {
+    "song_id": 11,
+    "descriptor": "Confident hip hop pick for creative sprints, solo commutes, and lyrical momentum.",
+    "activity_tags": ["confidence", "commute", "writing", "creative-sprint"],
+    "scene_tags": ["confident", "urban", "lyrical", "forward"],
+    "evidence": [
+      "High lyrical density makes it better for energized creative work than for low-distraction study.",
+      "Useful when the request asks for swagger, verbal flow, or focused self-belief."
+    ],
+    "avoid_for": ["sleep", "very-quiet-focus"]
+  },
+  {
+    "song_id": 12,
+    "descriptor": "Elegant classical piece for reflection, reading, ceremonies, and quiet reset moments.",
+    "activity_tags": ["reflection", "reading", "sleep", "ceremony"],
+    "scene_tags": ["classical", "dreamy", "timeless", "graceful"],
+    "evidence": [
+      "Very low energy and near-total instrumentalness make it the catalog's clearest classical calm option.",
+      "Best when the user wants beauty, stillness, or a refined acoustic atmosphere."
+    ],
+    "avoid_for": ["intense-workout", "party"]
+  },
+  {
+    "song_id": 13,
+    "descriptor": "Open-road country track for road trips, sunny drives, and honest uplifting singalongs.",
+    "activity_tags": ["road-trip", "travel", "sunny-drive", "uplift"],
+    "scene_tags": ["uplifting", "honest", "travel", "open-road"],
+    "evidence": [
+      "Moderate energy and an uplifting mood make it a dependable travel companion.",
+      "Best for requests that ask for warmth, movement, and clear-hearted optimism."
+    ],
+    "avoid_for": ["club-night", "deep-focus"]
+  },
+  {
+    "song_id": 14,
+    "descriptor": "Festival-ready EDM banger for dance floors, high-intensity training, and party peaks.",
+    "activity_tags": ["party", "dance", "workout", "festival"],
+    "scene_tags": ["euphoric", "pulsing", "celebratory", "club"],
+    "evidence": [
+      "Its euphoric tags and maximum live-energy feel make it one of the strongest party or cardio songs here.",
+      "Best when the request explicitly wants dance energy, celebration, or nonstop motion."
+    ],
+    "avoid_for": ["sleep", "quiet-reading", "gentle-focus"]
+  },
+  {
+    "song_id": 15,
+    "descriptor": "Acoustic folk story-song for journaling, nostalgia, campfire moods, and slow mornings.",
+    "activity_tags": ["journaling", "campfire", "nostalgia", "storytime"],
+    "scene_tags": ["nostalgic", "storytelling", "acoustic", "cozy"],
+    "evidence": [
+      "High acousticness plus storytelling warmth make it a strong match for reflective, human-scale listening.",
+      "It fits especially well when the listener asks for nostalgia, comfort, or quiet emotional detail."
+    ],
+    "avoid_for": ["heavy-workout", "festival", "club"]
+  },
+  {
+    "song_id": 16,
+    "descriptor": "Smooth R&B track for late-night unwinding, slow dancing, and intimate evening playlists.",
+    "activity_tags": ["late-night", "date-night", "slow-dance", "unwind"],
+    "scene_tags": ["smooth", "romantic", "late-night", "velvet"],
+    "evidence": [
+      "Balanced energy and romantic warmth make it a flexible pick for evening mood-setting.",
+      "A strong fit when the user wants something polished, emotional, and not too aggressive."
+    ],
+    "avoid_for": ["max-intensity-workout", "deep-focus"]
+  },
+  {
+    "song_id": 17,
+    "descriptor": "Playful Latin dance track for celebrations, travel energy, and upbeat movement.",
+    "activity_tags": ["party", "dance", "celebration", "travel"],
+    "scene_tags": ["playful", "festive", "dance", "colorful"],
+    "evidence": [
+      "High danceability and festive tags make it a reliable option when the request wants joy and motion.",
+      "Best for social playlists, celebration energy, or bright movement without the intensity of metal."
+    ],
+    "avoid_for": ["sleep", "quiet-study"]
+  },
+  {
+    "song_id": 18,
+    "descriptor": "Heavy metal blast for maximum adrenaline, lifting sessions, and aggressive release.",
+    "activity_tags": ["lift", "adrenaline", "release", "heavy-workout"],
+    "scene_tags": ["aggressive", "anthemic", "raw", "extreme"],
+    "evidence": [
+      "The highest energy profile in the catalog makes it best for all-out intensity rather than balanced listening.",
+      "Useful when the request specifically wants something raw, aggressive, and physically forceful."
+    ],
+    "avoid_for": ["sleep", "gentle-focus", "soft-acoustic"]
+  }
+]
