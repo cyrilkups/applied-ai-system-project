@@ -53,7 +53,7 @@ It parses these requests, retrieves supporting evidence from a knowledge base, r
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │        Reliability Layer (Self-Checking)                         │
-│  Reruns system 3 times to check consistency                      │
+│  Reruns the pipeline once to compare consistency                 │
 │  Emits: warnings (thin catalog, conflicting intent)              │
 │  Flags: grounded status, consistency_ok                          │
 └────────────────────────────┬────────────────────────────────────┘
@@ -156,7 +156,7 @@ Expected output: All tests pass, confirming that the system behaves as documente
 **Reliability Status:**
 
 - ✅ Grounded: Yes (catalog has strong focus/coding coverage)
-- ✅ Consistent: Yes (3 independent runs returned same top 3)
+- ✅ Consistent: Yes (comparison rerun returned the same top results)
 - ⚠️ Warnings: None
 
 **JSON Log (saved automatically):**
@@ -267,15 +267,15 @@ See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_r
 
 ### 4. **Self-Checking Reliability Layer (vs. Single-Pass Inference)**
 
-**Decision:** Every query triggers 3 independent runs of the full pipeline to check consistency.
+**Decision:** Every query triggers a comparison rerun of the full pipeline to check consistency.
 
 **Why:**
 
-- Detects bugs in randomized components (though current version is deterministic).
+- Detects regressions or unexpected ranking changes between identical runs.
 - Flags when small catalog changes affect rankings significantly.
 - Provides a confidence score: "how stable is this recommendation?"
 
-**Trade-off:** 3x computational cost. Acceptable for a demonstration system; would need optimization for production.
+**Trade-off:** Roughly 2x computational cost because each query is evaluated twice. Acceptable for a demonstration system; would need optimization for production.
 
 ---
 
@@ -289,59 +289,37 @@ See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_r
 
 ---
 
-## Testing Summary
+## Reliability and Evaluation
+
+**Short summary:** `11/11` automated tests passed with `pytest tests/ -v`, and the `4/4` benchmark prompts in `python -m src.main reliability` produced the expected hits, warning behavior, grounding, and consistency results. The system is strongest when the request overlaps with known catalog tags like `coding`, `gym`, or `journaling`, and weaker when the phrasing is semantically similar but not lexically matched because retrieval is rule-based and the catalog is small.
+
+### How I Tested It
+
+- **Automated tests:** `tests/test_recommender.py` and `tests/test_music_ai_system.py` verify parsing, ranking, genre safeguards, benchmark behavior, and JSON log writing.
+- **Consistency check:** `run_music_ai_system()` reruns the same query once and compares the recommendation IDs to confirm stable output for the deterministic pipeline.
+- **Logging:** each run can write a JSON trace to `logs/music_ai_runs/` with the parsed intent, retrieved evidence, final recommendations, and reliability warnings.
+- **Human evaluation:** I manually reviewed the coding, workout, journaling, and conflicting-genre outputs to check that the explanations matched the returned songs.
 
 ### What Worked
 
-✅ **Intent Parsing is Accurate:** The parser correctly infers mood, energy, and activity tags from natural language. Unit tests verify that gym → intense energy, coding → focus mood, etc.
+- Intent parsing correctly maps clear prompts like `"Need calm music for late-night coding"` and `"Need high-energy music for the gym"` into sensible moods, energy targets, and activity tags.
+- Retrieval bonuses meaningfully affect ranking order instead of sitting beside the results unused.
+- The genre safeguard keeps an explicitly requested genre in the top results for contradictory prompts such as classical plus intense workout.
+- The reliability suite correctly emits a warning for the conflicting classical-workout scenario while keeping the benchmark results consistent.
 
-✅ **Retrieval Bonuses Actually Change Ranking:** Confirmed in integration tests that a song with retrieval matches ranks higher than metadata alone would predict.
+### What Didn't Work Yet
 
-✅ **Genre Safeguard Prevents Silent Failures:** When a user requests classical music, a classical song appears in the top-5 even if lower-scoring. Warnings are emitted.
+- Lexical retrieval misses some semantically similar phrasing, so prompts like `"music for unwinding"` are weaker than keyword-heavy prompts such as `"calm"` or `"relaxed"`.
+- The catalog has only `18` songs, which makes some genre plus mood combinations thin and increases the need for warnings or fallback behavior.
+- The system does not learn from user feedback or listening history yet, so every query is answered fresh with the same rules.
+- The current consistency check is useful for catching regressions, but it is not a probability-based confidence score or a full robustness test under noisy inputs.
 
-✅ **Consistency Checks Catch Instability:** Running the pipeline 3 times in succession produces stable rankings for well-grounded queries. Thin-catalog queries show inconsistency, which triggers a warning.
+### Concrete Results
 
-✅ **Benchmark Scenarios Validate Four Use Cases:**
-
-- Chill Lofi (low energy, focus) → passes
-- High-Energy Pop (happy, energetic) → passes
-- Deep Intense Rock (aggressive, loud) → passes
-- Conflicted Edge Case (classical + intense) → passes with expected warnings
-
-### What Didn't Work (or Was Challenging)
-
-❌ **Semantic Retrieval is Limited:** The current retrieval is lexical (keyword matching). Phrases like "music for unwinding" don't match "relaxation" even though they're semantically similar. _Mitigation:_ A future version would use embeddings.
-
-❌ **Catalog is Too Small:** Some requests ("uplifting reggae for a beach party") can't be answered well because the catalog has only 1 reggae song. _Mitigation:_ Would need to expand the catalog.
-
-❌ **User History Not Captured:** The system doesn't learn from user feedback or past listening history. Every query is fresh. _Mitigation:_ Future version could track user interactions and adapt scoring weights.
-
-⚠️ **Edge Cases in Parser:** Unusual phrasing like "gimme loud stuff for dancing" requires manual rule additions. The parser is rule-based, not neural, so new patterns need new rules.
-
----
-
-### Testing Strategy
-
-**Unit Tests:** Located in `tests/test_music_ai_system.py`
-
-- Verify parser outputs correct intent for known queries
-- Confirm ranking preserves expected songs in top-3
-- Check that genre safeguard triggers when appropriate
-- Validate JSON log structure
-
-**Integration Tests:**
-
-- Full pipeline runs for all benchmark profiles
-- Reliability warnings are emitted for conflicting queries
-- Logs are written and parseable
-
-**Benchmark Suite:** Located in `src/main.py`
-
-- Runs 4 hardcoded evaluation profiles to check consistency
-- Compares expected top songs vs. actual output
-- Tracks whether warnings are appropriate
-
-**Coverage:** ~85% of code paths covered by tests. Critical paths (parser, retrieval fusion, genre safeguard) have 100% coverage.
+- `11/11` tests passed locally.
+- `4/4` benchmark scenarios passed locally.
+- JSON logging worked for both test runs and CLI runs.
+- The main failure mode is missing or weak lexical context, not code crashes.
 
 ---
 
@@ -369,7 +347,7 @@ That transparency felt closer to responsible AI than silently choosing for the u
 
 ### About Testing and Verification
 
-The reliability layer (running 3 times, checking consistency) was valuable not just for catching bugs, but for _understanding_ the system's behavior:
+The reliability layer (rerunning the same query and checking consistency) was valuable not just for catching bugs, but for _understanding_ the system's behavior:
 
 - Well-grounded queries (coding, workouts) produce stable rankings
 - Thin-catalog queries show wobbling rankings, which triggers a warning
