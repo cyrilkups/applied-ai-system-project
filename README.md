@@ -364,6 +364,10 @@ I used AI as a pair-programming and writing assistant throughout the project. On
 
 The biggest lesson from this project is that responsible AI is not just about making a system look smart. It is about making its behavior inspectable, testable, and appropriately limited. In practice, that meant building warnings, logs, and verification into the project instead of hiding uncertainty behind polished recommendations.
 
+### What This Says About Me as an AI Engineer
+
+This project shows that I approach AI engineering as systems work, not just model output work. I care about building tools that are explainable, testable, and honest about their limits. Instead of stopping at "it gives a reasonable answer," I focused on retrieval quality, observable reasoning steps, reliability checks, and clear documentation so another person can inspect, trust, and improve the system. That reflects the kind of AI engineer I want to be: practical, transparent, and responsible about how intelligent behavior is designed and evaluated.
+
 ---
 
 ## File Structure
