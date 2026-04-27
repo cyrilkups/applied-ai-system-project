@@ -188,7 +188,9 @@ EXCLUDE_KEYWORDS = {
 }
 
 NORMAL_DEFAULT_QUERY = "Find balanced recommendations for a general listener"
-RETRIEVAL_WEIGHT = 2.4
+SONG_RETRIEVAL_WEIGHT = 2.4
+SUPPORT_DOC_WEIGHT = 1.15
+SUPPORT_DOC_MIN_SCORE = 0.35
 
 RELIABILITY_BENCHMARKS = (
     {
@@ -243,6 +245,51 @@ class RetrievedEvidence:
 
 
 @dataclass(frozen=True)
+class SupportDocument:
+    document_id: str
+    title: str
+    keywords: Tuple[str, ...]
+    activity_tags: Tuple[str, ...]
+    desired_tags: Tuple[str, ...]
+    target_energy: float
+    likes_acoustic: bool
+    mode: str
+    evidence: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class SupportMatch:
+    document_id: str
+    title: str
+    retrieval_score: float
+    matched_terms: Tuple[str, ...]
+    activity_tags: Tuple[str, ...]
+    desired_tags: Tuple[str, ...]
+    target_energy: float
+    likes_acoustic: bool
+    recommended_mode: str
+    evidence: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class StyleCard:
+    profile: str
+    label: str
+    match_tags: Tuple[str, ...]
+    required_markers: Tuple[str, ...]
+    signature_terms: Tuple[str, ...]
+    examples: Tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class AgentStep:
+    step: int
+    name: str
+    summary: str
+    detail: str
+
+
+@dataclass(frozen=True)
 class RecommendationRecord:
     song: Dict[str, Any]
     base_score: float
@@ -251,6 +298,7 @@ class RecommendationRecord:
     matched_terms: Tuple[str, ...]
     evidence: Tuple[str, ...]
     explanation: str
+    specialized_explanation: str
 
 
 @dataclass(frozen=True)
@@ -266,9 +314,12 @@ class ReliabilityReport:
 class MusicAIResponse:
     query: str
     intent: ParsedIntent
+    support_matches: Tuple[SupportMatch, ...]
     retrieved_items: Tuple[RetrievedEvidence, ...]
     recommendations: Tuple[RecommendationRecord, ...]
     reliability: ReliabilityReport
+    agent_steps: Tuple[AgentStep, ...]
+    specialization_profile: str
     log_path: str
 
 
@@ -289,6 +340,53 @@ def load_song_knowledge(json_path: str = "data/song_knowledge_base.json") -> Dic
     with open(json_path, encoding="utf-8") as handle:
         raw_items = json.load(handle)
     return {int(item["song_id"]): item for item in raw_items}
+
+
+def load_support_documents(json_path: str = "data/query_support_documents.json") -> Tuple[SupportDocument, ...]:
+    """Load query-level support documents used as a second retrieval source."""
+    path = Path(json_path)
+    if not path.exists():
+        return ()
+
+    raw_items = json.loads(path.read_text(encoding="utf-8"))
+    documents = []
+    for item in raw_items:
+        documents.append(
+            SupportDocument(
+                document_id=str(item["document_id"]),
+                title=str(item["title"]),
+                keywords=tuple(_dedupe(item.get("keywords", []))),
+                activity_tags=tuple(_dedupe(item.get("activity_tags", []))),
+                desired_tags=tuple(_dedupe(item.get("desired_tags", []))),
+                target_energy=float(item.get("target_energy", 0.55)),
+                likes_acoustic=bool(item.get("likes_acoustic", True)),
+                mode=_normalize_mode_name(str(item.get("mode", "balanced"))),
+                evidence=tuple(item.get("evidence", [])[:2]),
+            )
+        )
+    return tuple(documents)
+
+
+def load_style_cards(json_path: str = "data/style_cards.json") -> Tuple[StyleCard, ...]:
+    """Load style cards that constrain listener-facing explanation tone."""
+    path = Path(json_path)
+    if not path.exists():
+        return ()
+
+    raw_items = json.loads(path.read_text(encoding="utf-8"))
+    cards = []
+    for item in raw_items:
+        cards.append(
+            StyleCard(
+                profile=str(item["profile"]),
+                label=str(item["label"]),
+                match_tags=tuple(_dedupe(item.get("match_tags", []))),
+                required_markers=tuple(item.get("required_markers", [])),
+                signature_terms=tuple(item.get("signature_terms", [])),
+                examples=tuple(item.get("examples", [])[:2]),
+            )
+        )
+    return tuple(cards)
 
 
 def parse_user_query(query: str, fallback_mode: str = "balanced") -> ParsedIntent:
@@ -382,6 +480,81 @@ def parse_user_query(query: str, fallback_mode: str = "balanced") -> ParsedInten
     )
 
 
+def retrieve_support_documents(
+    query: str,
+    support_documents: Sequence[SupportDocument],
+    *,
+    intent: Optional[ParsedIntent] = None,
+    top_n: int = 3,
+) -> List[SupportMatch]:
+    """Retrieve support documents that expand ambiguous or synonym-heavy requests."""
+    if not support_documents:
+        return []
+
+    parsed_intent = intent or parse_user_query(query)
+    normalized_query = (query or "").lower()
+    query_terms = set(_tokenize_text(query))
+    query_terms.update(parsed_intent.activity_tags)
+    query_terms.update(parsed_intent.desired_tags)
+    if parsed_intent.favorite_genre:
+        query_terms.add(parsed_intent.favorite_genre)
+    if parsed_intent.favorite_mood:
+        query_terms.add(parsed_intent.favorite_mood)
+
+    scored_documents: List[Tuple[float, SupportMatch]] = []
+    for document in support_documents:
+        doc_terms = _build_support_document_terms(document)
+        matched_terms = sorted(term for term in query_terms if term in doc_terms)
+        phrase_hits = sum(1 for keyword in document.keywords if keyword.lower() in normalized_query)
+        score = (phrase_hits * 1.25) + (len(matched_terms) * 0.45)
+
+        if parsed_intent.favorite_mood and parsed_intent.favorite_mood in document.desired_tags:
+            score += 0.25
+        if set(parsed_intent.activity_tags).intersection(document.activity_tags):
+            score += 0.45
+
+        if score <= 0.0:
+            continue
+
+        scored_documents.append(
+            (
+                score,
+                SupportMatch(
+                    document_id=document.document_id,
+                    title=document.title,
+                    retrieval_score=0.0,
+                    matched_terms=tuple(matched_terms[:6]),
+                    activity_tags=document.activity_tags,
+                    desired_tags=document.desired_tags,
+                    target_energy=document.target_energy,
+                    likes_acoustic=document.likes_acoustic,
+                    recommended_mode=document.mode,
+                    evidence=document.evidence,
+                ),
+            )
+        )
+
+    max_score = max((score for score, _ in scored_documents), default=0.0)
+    results: List[SupportMatch] = []
+    for raw_score, item in sorted(scored_documents, key=lambda pair: pair[0], reverse=True)[:top_n]:
+        normalized = raw_score / max_score if max_score else 0.0
+        results.append(
+            SupportMatch(
+                document_id=item.document_id,
+                title=item.title,
+                retrieval_score=normalized,
+                matched_terms=item.matched_terms,
+                activity_tags=item.activity_tags,
+                desired_tags=item.desired_tags,
+                target_energy=item.target_energy,
+                likes_acoustic=item.likes_acoustic,
+                recommended_mode=item.recommended_mode,
+                evidence=item.evidence,
+            )
+        )
+    return results
+
+
 def retrieve_song_evidence(
     query: str,
     songs: Sequence[Dict[str, Any]],
@@ -470,14 +643,65 @@ def run_music_ai_system(
     diversity: bool = True,
     log_dir: str = "logs/music_ai_runs",
     enable_logging: bool = True,
+    use_support_docs: bool = True,
+    support_docs_path: str = "data/query_support_documents.json",
+    specialization: str = "off",
+    style_cards_path: str = "data/style_cards.json",
     _skip_consistency_check: bool = False,
 ) -> MusicAIResponse:
     """End-to-end music recommendation pipeline with retrieval and self-checks."""
     safe_top_k = max(1, min(int(top_k), 10))
     songs = load_songs(songs_path)
     knowledge_base = load_song_knowledge(knowledge_base_path)
-    parsed_intent = parse_user_query(query, fallback_mode=mode or "balanced")
+    support_documents = load_support_documents(support_docs_path) if use_support_docs else ()
+    style_cards = load_style_cards(style_cards_path) if specialization != "off" else ()
+
+    agent_steps: List[AgentStep] = []
+    initial_intent = parse_user_query(query, fallback_mode=mode or "balanced")
+    _append_agent_step(
+        agent_steps,
+        "parse_query",
+        f"Parsed genre={initial_intent.favorite_genre or 'any'}, mood={initial_intent.favorite_mood}, energy={initial_intent.target_energy:.2f}.",
+        "; ".join(initial_intent.parser_notes) or "No special parser notes.",
+    )
+
+    parsed_intent = initial_intent
+    support_matches: List[SupportMatch] = []
+    if support_documents:
+        support_matches = retrieve_support_documents(
+            initial_intent.request,
+            support_documents,
+            intent=initial_intent,
+            top_n=3,
+        )
+        if support_matches:
+            _append_agent_step(
+                agent_steps,
+                "retrieve_support_docs",
+                "Matched extra query-support documents to widen the retrieval context.",
+                "; ".join(
+                    f"{item.title} ({', '.join(item.matched_terms) or 'phrase match'})"
+                    for item in support_matches
+                ),
+            )
+            enriched_intent = _enrich_intent_with_support_docs(initial_intent, support_matches)
+            if enriched_intent != initial_intent:
+                parsed_intent = enriched_intent
+                _append_agent_step(
+                    agent_steps,
+                    "plan_with_support_docs",
+                    f"Expanded the plan to activity tags: {', '.join(parsed_intent.activity_tags) or 'none'}.",
+                    f"Mode={parsed_intent.mode}; target_energy={parsed_intent.target_energy:.2f}; likes_acoustic={parsed_intent.likes_acoustic}.",
+                )
+
     active_mode = _normalize_mode_name(mode or parsed_intent.mode)
+    if active_mode != parsed_intent.mode:
+        _append_agent_step(
+            agent_steps,
+            "lock_mode",
+            f"Using explicit mode override: {active_mode}.",
+            "The caller overrode the inferred mode selection.",
+        )
 
     retrieved_items = retrieve_song_evidence(
         parsed_intent.request,
@@ -486,20 +710,45 @@ def run_music_ai_system(
         intent=parsed_intent,
         top_n=len(songs),
     )
+    _append_agent_step(
+        agent_steps,
+        "retrieve_song_evidence",
+        "Retrieved song-level evidence from the knowledge base.",
+        ", ".join(item.title for item in retrieved_items[:3]) or "No evidence hits.",
+    )
+
+    support_adjustments, support_reason_lookup = _build_support_song_adjustments(
+        songs=songs,
+        knowledge_base=knowledge_base,
+        support_matches=support_matches,
+    )
+
+    score_adjustments: Dict[int, float] = {}
+    extra_reason_parts: Dict[int, List[str]] = {}
     retrieval_lookup = {item.song_id: item for item in retrieved_items}
-    score_adjustments = {
-        song_id: round(RETRIEVAL_WEIGHT * item.retrieval_score, 4)
-        for song_id, item in ((item.song_id, item) for item in retrieved_items)
-    }
-    extra_reasons = {}
+
     for item in retrieved_items:
+        song_id = item.song_id
+        song_bonus = round(SONG_RETRIEVAL_WEIGHT * item.retrieval_score, 4)
+        score_adjustments[song_id] = score_adjustments.get(song_id, 0.0) + song_bonus
         matched = ", ".join(item.matched_terms[:4]) if item.matched_terms else "context match"
         evidence_hint = item.evidence[0] if item.evidence else item.descriptor
-        extra_reasons[item.song_id] = (
-            f"retrieval evidence bonus (+{score_adjustments[item.song_id]:.2f})"
-            f"; matched terms: {matched}"
-            f"; evidence: {evidence_hint}"
+        extra_reason_parts.setdefault(song_id, []).append(
+            f"retrieval evidence bonus (+{song_bonus:.2f}); matched terms: {matched}; evidence: {evidence_hint}"
         )
+
+    for song_id, support_score in support_adjustments.items():
+        support_bonus = round(SUPPORT_DOC_WEIGHT * support_score, 4)
+        score_adjustments[song_id] = score_adjustments.get(song_id, 0.0) + support_bonus
+        guide_titles = ", ".join(support_reason_lookup.get(song_id, ()))
+        extra_reason_parts.setdefault(song_id, []).append(
+            f"support doc bonus (+{support_bonus:.2f}); guides: {guide_titles or 'support document match'}"
+        )
+
+    extra_reasons = {
+        song_id: "; ".join(parts)
+        for song_id, parts in extra_reason_parts.items()
+    }
 
     user_prefs = {
         "favorite_genre": parsed_intent.favorite_genre,
@@ -523,10 +772,28 @@ def run_music_ai_system(
         int(song["id"]): score_song(user_prefs, song, mode=active_mode)[0]
         for song in songs
     }
+
+    specialization_profile = _resolve_specialization_profile(
+        specialization=specialization,
+        parsed_intent=parsed_intent,
+        style_cards=style_cards,
+    )
+    style_lookup = {card.profile: card for card in style_cards}
+
     recommendations: List[RecommendationRecord] = []
     for song, final_score, explanation in ranked:
         evidence_item = retrieval_lookup.get(int(song["id"]))
         retrieval_score = evidence_item.retrieval_score if evidence_item else 0.0
+        specialized_explanation = ""
+        if specialization_profile != "off":
+            style_card = style_lookup.get(specialization_profile)
+            specialized_explanation = _compose_specialized_explanation(
+                song=song,
+                parsed_intent=parsed_intent,
+                matched_terms=evidence_item.matched_terms if evidence_item else (),
+                evidence=evidence_item.evidence if evidence_item else (),
+                style_card=style_card,
+            )
         recommendations.append(
             RecommendationRecord(
                 song=song,
@@ -536,10 +803,25 @@ def run_music_ai_system(
                 matched_terms=evidence_item.matched_terms if evidence_item else (),
                 evidence=evidence_item.evidence if evidence_item else (),
                 explanation=explanation,
+                specialized_explanation=specialized_explanation,
             )
         )
 
-    log_path = ""
+    _append_agent_step(
+        agent_steps,
+        "rank_recommendations",
+        "Fused metadata scoring with song evidence and support-document bonuses.",
+        ", ".join(item.song["title"] for item in recommendations[:3]) or "No recommendations generated.",
+    )
+
+    if specialization_profile != "off":
+        _append_agent_step(
+            agent_steps,
+            "specialize_explanations",
+            f"Applied the {specialization_profile} style card to listener-facing explanations.",
+            "Each recommendation now includes constrained Best for / Why it fits / Watch-out phrasing.",
+        )
+
     if not _skip_consistency_check:
         comparison = run_music_ai_system(
             query,
@@ -550,6 +832,10 @@ def run_music_ai_system(
             diversity=diversity,
             log_dir=log_dir,
             enable_logging=False,
+            use_support_docs=use_support_docs,
+            support_docs_path=support_docs_path,
+            specialization=specialization,
+            style_cards_path=style_cards_path,
             _skip_consistency_check=True,
         )
         reliability = _evaluate_reliability(
@@ -566,12 +852,23 @@ def run_music_ai_system(
             comparison_recommendations=recommendations,
         )
 
+    _append_agent_step(
+        agent_steps,
+        "self_check",
+        f"Reliability status={reliability.status}, grounded={reliability.grounded}, consistent={reliability.consistency_ok}.",
+        "; ".join(reliability.warnings) or "No warnings emitted.",
+    )
+
+    log_path = ""
     response = MusicAIResponse(
         query=parsed_intent.request,
         intent=parsed_intent,
+        support_matches=tuple(support_matches),
         retrieved_items=tuple(retrieved_items),
         recommendations=tuple(recommendations),
         reliability=reliability,
+        agent_steps=tuple(agent_steps),
+        specialization_profile=specialization_profile,
         log_path=log_path,
     )
 
@@ -580,9 +877,12 @@ def run_music_ai_system(
         response = MusicAIResponse(
             query=response.query,
             intent=response.intent,
+            support_matches=response.support_matches,
             retrieved_items=response.retrieved_items,
             recommendations=response.recommendations,
             reliability=response.reliability,
+            agent_steps=response.agent_steps,
+            specialization_profile=response.specialization_profile,
             log_path=log_path,
         )
 
@@ -633,6 +933,22 @@ def format_intent_summary(intent: ParsedIntent) -> str:
     )
 
 
+def format_support_rows(items: Sequence[SupportMatch]) -> List[Dict[str, str]]:
+    """Convert support-document retrieval results into table-ready rows."""
+    rows = []
+    for index, item in enumerate(items, start=1):
+        rows.append(
+            {
+                "rank": index,
+                "document": item.title,
+                "score": f"{item.retrieval_score:.2f}",
+                "matches": ", ".join(item.matched_terms) or "phrase match",
+                "evidence": item.evidence[0] if item.evidence else "No support evidence",
+            }
+        )
+    return rows
+
+
 def format_retrieval_rows(items: Sequence[RetrievedEvidence]) -> List[Dict[str, str]]:
     """Convert retrieval results into table-ready rows."""
     rows = []
@@ -647,6 +963,11 @@ def format_retrieval_rows(items: Sequence[RetrievedEvidence]) -> List[Dict[str, 
             }
         )
     return rows
+
+
+def format_agent_steps(steps: Sequence[AgentStep]) -> List[str]:
+    """Render agent steps as readable bullet strings for the CLI."""
+    return [f"{step.step}. {step.name}: {step.summary} {step.detail}".strip() for step in steps]
 
 
 def format_reliability_summary(report: ReliabilityReport) -> str:
@@ -740,14 +1061,28 @@ def _write_run_log(response: MusicAIResponse, log_dir: str) -> str:
     payload = {
         "query": response.query,
         "intent": asdict(response.intent),
+        "support_matches": [asdict(item) for item in response.support_matches],
         "retrieved_items": [asdict(item) for item in response.retrieved_items],
         "recommendations": [asdict(item) for item in response.recommendations],
         "reliability": asdict(response.reliability),
+        "agent_steps": [asdict(step) for step in response.agent_steps],
+        "specialization_profile": response.specialization_profile,
         "available_modes": available_modes(),
     }
     with log_path.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
     return str(log_path)
+
+
+def _append_agent_step(steps: List[AgentStep], name: str, summary: str, detail: str) -> None:
+    steps.append(
+        AgentStep(
+            step=len(steps) + 1,
+            name=name,
+            summary=summary,
+            detail=detail,
+        )
+    )
 
 
 def _match_keyword(tokens: Iterable[str], keyword_map: Dict[str, set[str]]) -> str:
@@ -825,6 +1160,192 @@ def _build_document_terms(song: Dict[str, Any], document: Dict[str, Any]) -> Lis
     for field in fields:
         terms.extend(_tokenize_text(field.replace("-", " ")))
     return terms
+
+
+def _build_support_document_terms(document: SupportDocument) -> set[str]:
+    fields = [
+        document.title,
+        " ".join(document.keywords),
+        " ".join(document.activity_tags),
+        " ".join(document.desired_tags),
+        " ".join(document.evidence),
+    ]
+    terms: List[str] = []
+    for field in fields:
+        terms.extend(_tokenize_text(field.replace("-", " ")))
+    return set(terms)
+
+
+def _enrich_intent_with_support_docs(intent: ParsedIntent, support_matches: Sequence[SupportMatch]) -> ParsedIntent:
+    eligible_matches = [item for item in support_matches if item.retrieval_score >= SUPPORT_DOC_MIN_SCORE]
+    if not eligible_matches:
+        return intent
+
+    notes = list(intent.parser_notes)
+    activity_tags = list(intent.activity_tags)
+    desired_tags = list(intent.desired_tags)
+    weighted_energy = intent.target_energy * 1.4
+    total_weight = 1.4
+    acoustic_score = 1.2 if intent.likes_acoustic else -1.2
+    inferred_mood = intent.favorite_mood
+    mood_was_default = any("filled missing mood with inferred default" in note for note in intent.parser_notes)
+    mode_votes: List[Tuple[str, float]] = [(intent.mode, 1.0)]
+
+    for match in eligible_matches:
+        weight = 0.7 + match.retrieval_score
+        activity_tags.extend(match.activity_tags)
+        desired_tags.extend(match.desired_tags)
+        weighted_energy += match.target_energy * weight
+        total_weight += weight
+        acoustic_score += weight if match.likes_acoustic else -weight
+        mode_votes.append((match.recommended_mode, weight))
+        notes.append(f"support doc '{match.title}' expanded the request context")
+
+        if mood_was_default:
+            supported_moods = [tag for tag in match.desired_tags if tag in MOOD_KEYWORDS]
+            if supported_moods:
+                inferred_mood = supported_moods[0]
+
+    active_mode = max(mode_votes, key=lambda item: item[1])[0]
+    if inferred_mood != intent.favorite_mood:
+        notes.append(f"support docs refined the fallback mood to {inferred_mood}")
+
+    return ParsedIntent(
+        request=intent.request,
+        favorite_genre=intent.favorite_genre,
+        favorite_mood=inferred_mood,
+        target_energy=_clamp(weighted_energy / total_weight, 0.0, 1.0),
+        likes_acoustic=acoustic_score >= 0.0,
+        activity_tags=tuple(_dedupe(activity_tags)),
+        desired_tags=tuple(_dedupe([inferred_mood, *desired_tags])),
+        exclude_tags=intent.exclude_tags,
+        mode=active_mode,
+        parser_notes=tuple(_dedupe(notes)),
+    )
+
+
+def _build_support_song_adjustments(
+    *,
+    songs: Sequence[Dict[str, Any]],
+    knowledge_base: Dict[int, Dict[str, Any]],
+    support_matches: Sequence[SupportMatch],
+) -> Tuple[Dict[int, float], Dict[int, Tuple[str, ...]]]:
+    eligible_matches = [item for item in support_matches if item.retrieval_score >= SUPPORT_DOC_MIN_SCORE]
+    if not eligible_matches:
+        return {}, {}
+
+    raw_scores: Dict[int, float] = {}
+    reason_titles: Dict[int, Tuple[str, ...]] = {}
+    for song in songs:
+        song_id = int(song["id"])
+        song_terms = set(_build_document_terms(song, knowledge_base.get(song_id, {})))
+        total = 0.0
+        supporting_docs: List[str] = []
+
+        for match in eligible_matches:
+            support_terms = set(match.activity_tags).union(match.desired_tags).union(match.matched_terms)
+            overlap = len(support_terms.intersection(song_terms))
+            if overlap == 0:
+                continue
+            supporting_docs.append(match.title)
+            total += match.retrieval_score * (
+                (overlap * 0.28) + (_energy_band_alignment(match.target_energy, float(song["energy"])) * 0.55)
+            )
+
+        if total > 0.0:
+            raw_scores[song_id] = total
+            reason_titles[song_id] = tuple(_dedupe(supporting_docs))
+
+    max_score = max(raw_scores.values(), default=0.0)
+    if not max_score:
+        return {}, {}
+
+    normalized_scores = {
+        song_id: raw_score / max_score
+        for song_id, raw_score in raw_scores.items()
+    }
+    return normalized_scores, reason_titles
+
+
+def _resolve_specialization_profile(
+    *,
+    specialization: str,
+    parsed_intent: ParsedIntent,
+    style_cards: Sequence[StyleCard],
+) -> str:
+    normalized = (specialization or "off").strip().lower().replace("-", "_")
+    if normalized in {"off", "none", "baseline"} or not style_cards:
+        return "off"
+
+    available_profiles = {card.profile for card in style_cards}
+    if normalized != "auto":
+        return normalized if normalized in available_profiles else "off"
+
+    request_tags = set(parsed_intent.activity_tags).union(parsed_intent.desired_tags)
+    best_card = None
+    best_score = 0
+    for card in style_cards:
+        score = len(request_tags.intersection(card.match_tags))
+        if score > best_score:
+            best_card = card
+            best_score = score
+
+    if best_card is not None and best_score > 0:
+        return best_card.profile
+    if parsed_intent.target_energy >= 0.82:
+        return "hype_trainer" if "hype_trainer" in available_profiles else "off"
+    if {"nostalgic", "reflection", "calm", "unwind"}.intersection(request_tags):
+        return "reflective_curator" if "reflective_curator" in available_profiles else "off"
+    if {"focus", "coding", "study", "late-night"}.intersection(request_tags):
+        return "focus_coach" if "focus_coach" in available_profiles else "off"
+    return "off"
+
+
+def _compose_specialized_explanation(
+    *,
+    song: Dict[str, Any],
+    parsed_intent: ParsedIntent,
+    matched_terms: Sequence[str],
+    evidence: Sequence[str],
+    style_card: Optional[StyleCard],
+) -> str:
+    if style_card is None:
+        return ""
+
+    activity_tags = set(parsed_intent.activity_tags)
+    evidence_text = evidence[0] if evidence else "metadata alignment and retrieval grounding"
+    context_terms = ", ".join(matched_terms[:3]) if matched_terms else parsed_intent.favorite_mood
+
+    if style_card.profile == "focus_coach":
+        best_for = "heads-down work, reading, or low-distraction concentration"
+        why = (
+            f"steady lane energy and low-distraction texture line up with {context_terms}; "
+            f"evidence points to reliable focus support"
+        )
+        watch_out = "if you want a big adrenaline lift, this can feel too gentle"
+    elif style_card.profile == "hype_trainer":
+        best_for = "high-output movement, intervals, or push-pace momentum"
+        why = (
+            f"high energy plus driving motion cues match {context_terms}; "
+            f"evidence highlights momentum and effort"
+        )
+        watch_out = "this is a poor fit for quiet study or late-night unwinding"
+    else:
+        reflective_focus = "memory-rich reflection" if "nostalgic" in parsed_intent.desired_tags else "slow-burn downtime"
+        best_for = f"{reflective_focus}, journaling, or a soft evening reset"
+        why = (
+            f"warm, human-scale texture lines up with {context_terms}; "
+            f"evidence emphasizes gentle atmosphere"
+        )
+        watch_out = "if you need speed or impact, this may drift too softly"
+
+    return (
+        f"{style_card.label}. "
+        f"Best for: {best_for}. "
+        f"Why it fits: {why}. "
+        f"Watch-out: {watch_out}. "
+        f"Evidence cue: {evidence_text}"
+    )
 
 
 def _energy_band_alignment(requested_energy: float, song_energy: float) -> float:

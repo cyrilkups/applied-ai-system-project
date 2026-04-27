@@ -6,10 +6,12 @@ import sys
 from textwrap import wrap
 
 from src.music_ai_system import (
+    format_agent_steps,
     format_benchmark_rows,
     format_intent_summary,
     format_reliability_summary,
     format_retrieval_rows,
+    format_support_rows,
     run_music_ai_system,
     run_reliability_suite,
 )
@@ -66,6 +68,14 @@ RETRIEVAL_COLUMNS = (
     ("#", 3),
     ("Song", 20),
     ("RAG", 6),
+    ("Matches", 28),
+    ("Evidence", 64),
+)
+
+SUPPORT_COLUMNS = (
+    ("#", 3),
+    ("Guide", 24),
+    ("Score", 6),
     ("Matches", 28),
     ("Evidence", 64),
 )
@@ -154,6 +164,12 @@ def _normalize_mode_input(raw_mode: str) -> str:
     return normalized if normalized in MODE_CONFIGS else "balanced"
 
 
+def _normalize_specialization_input(raw_value: str) -> str:
+    normalized = (raw_value or "off").strip().lower().replace("-", "_")
+    allowed = {"off", "auto", "focus_coach", "hype_trainer", "reflective_curator"}
+    return normalized if normalized in allowed else "off"
+
+
 def _parse_runtime_options(argv: list[str]) -> tuple[list[str], bool]:
     args = argv[1:]
     diversity = "--no-diversity" not in args
@@ -166,38 +182,54 @@ def _parse_runtime_options(argv: list[str]) -> tuple[list[str], bool]:
     return [_normalize_mode_input(filtered_args[0])], diversity
 
 
-def _parse_query_options(args: list[str]) -> tuple[str, int, bool, str]:
-    mode = ""
-    top_k = 5
-    diversity = True
+def _parse_query_options(args: list[str]) -> dict:
+    options = {
+        "mode": "",
+        "top_k": 5,
+        "diversity": True,
+        "query": "",
+        "show_trace": False,
+        "use_support_docs": True,
+        "specialization": "off",
+    }
     query_parts: list[str] = []
 
     index = 0
     while index < len(args):
         token = args[index]
         if token == "--no-diversity":
-            diversity = False
+            options["diversity"] = False
+        elif token == "--show-trace":
+            options["show_trace"] = True
+        elif token == "--single-source":
+            options["use_support_docs"] = False
         elif token == "--mode" and index + 1 < len(args):
-            mode = _normalize_mode_input(args[index + 1])
+            options["mode"] = _normalize_mode_input(args[index + 1])
             index += 1
         elif token.startswith("--mode="):
-            mode = _normalize_mode_input(token.split("=", 1)[1])
+            options["mode"] = _normalize_mode_input(token.split("=", 1)[1])
         elif token == "--top-k" and index + 1 < len(args):
             try:
-                top_k = max(1, min(int(args[index + 1]), 10))
+                options["top_k"] = max(1, min(int(args[index + 1]), 10))
             except ValueError:
-                top_k = 5
+                options["top_k"] = 5
             index += 1
         elif token.startswith("--top-k="):
             try:
-                top_k = max(1, min(int(token.split("=", 1)[1]), 10))
+                options["top_k"] = max(1, min(int(token.split("=", 1)[1]), 10))
             except ValueError:
-                top_k = 5
+                options["top_k"] = 5
+        elif token == "--specialization" and index + 1 < len(args):
+            options["specialization"] = _normalize_specialization_input(args[index + 1])
+            index += 1
+        elif token.startswith("--specialization="):
+            options["specialization"] = _normalize_specialization_input(token.split("=", 1)[1])
         else:
             query_parts.append(token)
         index += 1
 
-    return mode, top_k, diversity, " ".join(query_parts).strip()
+    options["query"] = " ".join(query_parts).strip()
+    return options
 
 
 def print_profile_report(name: str, prefs: dict, recommendations: list, mode: str, diversity: bool) -> None:
@@ -221,7 +253,7 @@ def run_mode(mode: str, diversity: bool, songs: list[dict]) -> None:
         print_profile_report(name, prefs, recommendations, mode=mode, diversity=diversity)
 
 
-def _print_music_ai_report(response) -> None:
+def _print_music_ai_report(response, *, show_trace: bool = False) -> None:
     print("\n=== Applied Music AI Music Recommender ===")
     print(f"Request: {response.query}")
     print(f"Parsed intent: {format_intent_summary(response.intent)}")
@@ -230,12 +262,27 @@ def _print_music_ai_report(response) -> None:
     if response.intent.parser_notes:
         print(f"Parser notes: {'; '.join(response.intent.parser_notes)}")
 
+    if response.support_matches:
+        print("\nSupport documents")
+        support_rows = format_support_rows(response.support_matches)
+        print(_format_table(support_rows, SUPPORT_COLUMNS, ("rank", "document", "score", "matches", "evidence")))
+
     print("\nRetrieved evidence")
     retrieval_rows = format_retrieval_rows(response.retrieved_items[:5])
     print(_format_table(retrieval_rows, RETRIEVAL_COLUMNS, ("rank", "song", "score", "matches", "evidence")))
 
     print("\nRecommendations")
     print(_format_table(_build_pipeline_rows(response), PIPELINE_COLUMNS, ("rank", "song", "artist", "final", "base", "rag", "reasons")))
+
+    if response.specialization_profile != "off":
+        print(f"\nSpecialized explanations ({response.specialization_profile})")
+        for index, item in enumerate(response.recommendations[:3], start=1):
+            print(f"{index}. {item.song['title']}: {item.specialized_explanation}")
+
+    if show_trace:
+        print("\nAgent trace")
+        for line in format_agent_steps(response.agent_steps):
+            print(f"- {line}")
 
     print(f"\nReliability: {format_reliability_summary(response.reliability)}")
     if response.log_path:
@@ -248,12 +295,20 @@ def _print_reliability_suite() -> None:
     print(_format_table(format_benchmark_rows(results), BENCHMARK_COLUMNS, ("scenario", "expected", "warning", "grounded", "consistent", "top_titles")))
 
 
+def _print_feature_evaluation() -> None:
+    from src.evaluation import print_evaluation_report
+
+    print_evaluation_report()
+
+
 def _print_usage() -> None:
     print("Usage:")
     print("  python -m src.main")
     print("  python -m src.main [balanced|genre_first|mood_first|energy_focused|all] [--no-diversity]")
     print("  python -m src.main query \"Need calm music for late-night coding\" [--mode mood_first] [--top-k 5] [--no-diversity]")
+    print("  python -m src.main query \"Need something for debugging at 1am\" [--show-trace] [--specialization auto] [--single-source]")
     print("  python -m src.main reliability")
+    print("  python -m src.main evaluate")
     print("  python -m src.main \"Need upbeat music for a workout\"")
 
 
@@ -264,7 +319,7 @@ def main() -> None:
         songs = load_songs("data/songs.csv")
         print(f"Available modes: {', '.join(available_modes())}")
         print("Default run shows the baseline profile evaluation suite.")
-        print("Use `query` for the retrieval-augmented system or `reliability` for benchmark checks.")
+        print("Use `query` for the retrieval-augmented system, `reliability` for benchmark checks, or `evaluate` for the optional feature harness.")
         for mode in modes:
             run_mode(mode, diversity=diversity, songs=songs)
         return
@@ -278,10 +333,21 @@ def main() -> None:
         _print_reliability_suite()
         return
 
+    if first == "evaluate":
+        _print_feature_evaluation()
+        return
+
     if first == "query":
-        mode, top_k, diversity, query = _parse_query_options(args[1:])
-        response = run_music_ai_system(query, mode=mode or None, top_k=top_k, diversity=diversity)
-        _print_music_ai_report(response)
+        options = _parse_query_options(args[1:])
+        response = run_music_ai_system(
+            options["query"],
+            mode=options["mode"] or None,
+            top_k=options["top_k"],
+            diversity=options["diversity"],
+            use_support_docs=options["use_support_docs"],
+            specialization=options["specialization"],
+        )
+        _print_music_ai_report(response, show_trace=options["show_trace"])
         return
 
     if first in MODE_CONFIGS or first == "all" or first == "--no-diversity":
@@ -292,9 +358,16 @@ def main() -> None:
             run_mode(mode, diversity=diversity, songs=songs)
         return
 
-    mode, top_k, diversity, query = _parse_query_options(args)
-    response = run_music_ai_system(query, mode=mode or None, top_k=top_k, diversity=diversity)
-    _print_music_ai_report(response)
+    options = _parse_query_options(args)
+    response = run_music_ai_system(
+        options["query"],
+        mode=options["mode"] or None,
+        top_k=options["top_k"],
+        diversity=options["diversity"],
+        use_support_docs=options["use_support_docs"],
+        specialization=options["specialization"],
+    )
+    _print_music_ai_report(response, show_trace=options["show_trace"])
 
 
 if __name__ == "__main__":

@@ -13,6 +13,24 @@ The first version of this project was a transparent content-based recommender. I
 
 That change matters because the system behavior is no longer only about the scoring formula. Retrieval and self-checking now shape the output directly.
 
+## How I Used AI During Development
+
+I used AI in three main ways during development:
+
+- prompting for architecture ideas, especially how to separate parsing, retrieval, ranking, and reliability into cleaner pipeline stages
+- debugging and test design, especially for edge cases like contradictory genre-plus-energy requests
+- documentation support, including turning implementation details into clearer explanations for the README and model card
+
+AI was most useful when I treated it like a pair-programming assistant and verified every suggestion against the real code and actual command output.
+
+## One Helpful AI Suggestion
+
+One helpful suggestion was to model the system as a pipeline with explicit stages instead of a single bigger recommender function. That pushed me toward a structure where parsing, retrieval, scoring, reliability checks, and logging were separate concerns. That made the code easier to test and made the system easier to explain to a reviewer.
+
+## One Flawed AI Suggestion
+
+One flawed suggestion was an earlier draft of documentation that described stronger sample outputs and a more polished reliability process than the code actually produced at the time. That was a useful warning sign: AI can write convincing descriptions of features that are only partially implemented. It reminded me to validate claims with tests, CLI runs, and logs before keeping them in the project.
+
 ## What I Learned
 
 The biggest lesson was that "more intelligent behavior" is not just adding more features to a score. The project improved the most when I added structure around the score:

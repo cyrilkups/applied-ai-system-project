@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Classic Coding Prompt",
+    "query": "Need calm music for late-night coding",
+    "expected_titles": ["Midnight Coding", "Focus Flow", "Library Rain"]
+  },
+  {
+    "name": "Synonym Heavy Debugging",
+    "query": "Need something for debugging at 1am",
+    "expected_titles": ["Midnight Coding", "Focus Flow", "Library Rain"]
+  },
+  {
+    "name": "Gym Baseline Prompt",
+    "query": "Need high-energy music for the gym",
+    "expected_titles": ["Gym Hero", "Neon Pulse Circuit", "Iron Riot", "Storm Runner"]
+  },
+  {
+    "name": "Spin Class Intervals",
+    "query": "Give me music for spin class intervals",
+    "expected_titles": ["Gym Hero", "Neon Pulse Circuit", "Storm Runner", "Iron Riot"]
+  },
+  {
+    "name": "Reflective Journaling Prompt",
+    "query": "Play nostalgic acoustic music for journaling",
+    "expected_titles": ["Fireside Letters", "Coffee Shop Stories", "Library Rain"]
+  },
+  {
+    "name": "Scrapbooking Synonym Prompt",
+    "query": "Make it memory-lane acoustic for scrapbooking",
+    "expected_titles": ["Fireside Letters", "Coffee Shop Stories", "Library Rain"]
+  },
+  {
+    "name": "Evening Recovery Prompt",
+    "query": "I want to decompress after work",
+    "expected_titles": ["Velvet Hour", "Spacewalk Thoughts", "Coffee Shop Stories", "Library Rain"]
+  }
+]

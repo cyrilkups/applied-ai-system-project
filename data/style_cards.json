@@ -1,0 +1,35 @@
+[
+  {
+    "profile": "focus_coach",
+    "label": "Focus Coach",
+    "match_tags": ["coding", "study", "reading", "focus", "late-night"],
+    "required_markers": ["Best for:", "Why it fits:", "Watch-out:"],
+    "signature_terms": ["heads-down", "low-distraction", "steady lane"],
+    "examples": [
+      "Best for: heads-down work. Why it fits: steady energy, low-distraction texture, and evidence for focus. Watch-out: may feel too gentle if you want a lift.",
+      "Best for: quiet concentration. Why it fits: restrained energy and a steady lane for long sessions. Watch-out: not ideal for adrenaline or party momentum."
+    ]
+  },
+  {
+    "profile": "hype_trainer",
+    "label": "Hype Trainer",
+    "match_tags": ["workout", "gym", "run", "party", "drive"],
+    "required_markers": ["Best for:", "Why it fits:", "Watch-out:"],
+    "signature_terms": ["high-output", "push pace", "adrenaline"],
+    "examples": [
+      "Best for: high-output movement. Why it fits: huge energy, strong drive, and evidence for pushing pace. Watch-out: can be too intense for quiet listening.",
+      "Best for: hard effort. Why it fits: adrenaline and motion carry the recommendation. Watch-out: not a soft reset track."
+    ]
+  },
+  {
+    "profile": "reflective_curator",
+    "label": "Reflective Curator",
+    "match_tags": ["journaling", "nostalgia", "meditation", "reflection", "unwind"],
+    "required_markers": ["Best for:", "Why it fits:", "Watch-out:"],
+    "signature_terms": ["warm glow", "slow-burn", "memory-rich"],
+    "examples": [
+      "Best for: memory-rich downtime. Why it fits: a warm glow, reflective tone, and evidence for gentle listening. Watch-out: can feel too soft for a rush of energy.",
+      "Best for: slow-burn reflection. Why it fits: nostalgic cues and human warmth. Watch-out: not the right pick if you need momentum."
+    ]
+  }
+]

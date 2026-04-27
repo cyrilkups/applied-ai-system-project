@@ -37,22 +37,24 @@ It parses these requests, retrieves supporting evidence from a knowledge base, r
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│         Retrieval Layer (Lexical Knowledge Base Lookup)         │
-│  Matches user intent against song_knowledge_base.json            │
-│  Returns: retrieval_score, matched_evidence, caution_flags      │
+│        Multi-Source Retrieval Layer                              │
+│  Matches intent against song_knowledge_base.json +               │
+│  query_support_documents.json for synonym-heavy prompts          │
+│  Returns: retrieval_score, matched_evidence, support-doc hints   │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │         Transparent Recommender (Explicit Scoring)               │
 │  Combines: metadata scoring + retrieval bonuses                  │
-│  Applies: genre safeguards, diversity reranking                  │
+│  Applies: support-doc bonuses, genre safeguards, diversity       │
 │  Returns: ranked recommendations with explanation strings        │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│        Reliability Layer (Self-Checking)                         │
+│     Agent Trace + Reliability Layer (Self-Checking)              │
+│  Saves observable planning / retrieval / ranking steps           │
 │  Reruns the pipeline once to compare consistency                 │
 │  Emits: warnings (thin catalog, conflicting intent)              │
 │  Flags: grounded status, consistency_ok                          │
@@ -62,13 +64,27 @@ It parses these requests, retrieves supporting evidence from a knowledge base, r
 ┌─────────────────────────────────────────────────────────────────┐
 │            Output: Explained Recommendations                     │
 │  - Top 3-5 songs with title, artist, score breakdown            │
-│  - Retrieved evidence snippets for each song                     │
+│  - Retrieved evidence snippets and support-doc matches           │
+│  - Optional specialized explanation styles                       │
 │  - Reliability warnings and confidence indicators                │
 │  - Full trace log saved to JSON for audit                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Key insight:** Retrieval scores _directly change the final ranking_, not just displayed alongside it. A song's base score might be 0.72, but a retrieval match on "late-night coding" context bumps it higher—making the system context-aware rather than purely statistical.
+**Key insight:** Retrieval scores _directly change the final ranking_, not just displayed alongside it. In the enhanced version, both song evidence and query-support documents can change the final order, making the system context-aware rather than purely statistical.
+
+---
+
+## Optional Bonus Features Implemented
+
+This version now includes all four optional stretch features from the rubric:
+
+- **RAG enhancement (+2):** the retriever now uses a second document source, `data/query_support_documents.json`, to map synonym-heavy prompts like `"spin class intervals"` or `"decompress after work"` onto stronger activity tags before ranking.
+- **Agentic workflow enhancement (+2):** every query produces an observable intermediate trace with steps like `parse_query`, `retrieve_support_docs`, `plan_with_support_docs`, `retrieve_song_evidence`, `rank_recommendations`, and `self_check`.
+- **Fine-tuning / specialization (+2):** the system can generate constrained listener-facing explanations using style cards in `data/style_cards.json` such as `focus_coach`, `hype_trainer`, and `reflective_curator`.
+- **Test harness / evaluation script (+2):** `python -m src.main evaluate` compares baseline single-source retrieval against the enhanced system and prints pass/fail style summaries.
+
+**Measured result from the local evaluation harness:** multi-source retrieval improved `hit@3` from `5/7` to `7/7`, with `0.95` average confidence, `7.00` observable trace steps per run, and `100%` specialization compliance.
 
 ---
 
@@ -104,6 +120,9 @@ Check that these files are present:
 ```bash
 data/songs.csv                    # 18 songs with structured metadata
 data/song_knowledge_base.json     # Retrieval evidence for each song
+data/query_support_documents.json # Second retrieval source for synonym-heavy prompts
+data/style_cards.json             # Constrained explanation styles
+data/evaluation_queries.json      # Inputs used by the evaluation harness
 ```
 
 ### 4. Run the System (Command-Line)
@@ -139,19 +158,19 @@ Expected output: All tests pass, confirming that the system behaves as documente
 "Need calm music for late-night coding"
 ```
 
-**System Intent Parsing:**
+**Current System Parsing:**
 
 - Detected mood: `calm`
-- Target energy: `0.31` (low, suitable for focus)
-- Activity tags: `["coding", "focus", "late-night"]`
+- Target energy: about `0.32`
+- Activity tags: `coding`, `focus`, `late-night`, plus support-doc additions like `reflection` and `unwind`
 - Scoring mode: `mood_first`
 
-**Top Recommendations:**
-| Rank | Song | Artist | Genre | Score | Reason |
-|------|------|--------|-------|-------|--------|
-| 1 | Midnight Coding | Lofi Dev | Lofi | 0.89 | Matches mood (calm), activity (coding), and energy perfectly. Retrieved evidence confirms low distraction. |
-| 2 | Focus Flow | Study Beats | Lofi | 0.87 | Calm mood with focused energy. Retrieved evidence emphasizes "useful during heads-down work." |
-| 3 | Steady Loop | Ambient Coder | Ambient | 0.84 | Very low energy, calm, instrumentalness helps concentration. Retrieval bonus for "study" tag match. |
+**Current Top Recommendations:**
+| Rank | Song | Artist | Why It Ranks |
+|------|------|--------|--------------|
+| 1 | Midnight Coding | LoRoom | Strong focus evidence, low-distraction energy, and support-doc bonuses for late-night work. |
+| 2 | Focus Flow | LoRoom | Focus-heavy retrieval match with steady energy and strong grounding for heads-down work. |
+| 3 | Library Rain | Paper Lanterns | Quiet acoustic background option with strong calm/focus evidence. |
 
 **Reliability Status:**
 
@@ -159,8 +178,7 @@ Expected output: All tests pass, confirming that the system behaves as documente
 - ✅ Consistent: Yes (comparison rerun returned the same top results)
 - ⚠️ Warnings: None
 
-**JSON Log (saved automatically):**
-See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_runs/20260425-012813-need-calm-music-for-late-night-coding.json) for full trace including parser output, retrieval matches, and scoring details.
+**What this shows:** the enhanced system is not only matching direct song evidence, but also using support documents to strengthen the late-night focus interpretation.
 
 ---
 
@@ -172,25 +190,21 @@ See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_r
 "Need high-energy music for the gym"
 ```
 
-**System Intent Parsing:**
+**Current System Parsing:**
 
 - Detected mood: `intense`
-- Target energy: `0.92` (very high)
-- Activity tags: `["workout", "gym", "intense"]`
+- Target energy: about `0.93`
+- Activity tags: `workout`, `gym`, `push`, `drive`
 - Scoring mode: `energy_focused`
 
-**Top Recommendations:**
-| Rank | Song | Artist | Genre | Score | Reason |
-|------|------|--------|-------|-------|--------|
-| 1 | Pulse Rush | Electric Beats | EDM | 0.96 | Highest energy track in catalog (0.94 energy, 0.88 danceability). Matches intense workout mood. |
-| 2 | Iron Grip | Power Metal | Metal | 0.93 | Intense mood + high tempo. Retrieved evidence tags: "aggressive," "powerful," "workout." |
-| 3 | Rhythm Surge | House Masters | Electronic | 0.91 | High energy and danceability (0.85+). Sustained intensity across the track. |
+**Current Top Recommendations:**
+| Rank | Song | Artist | Why It Ranks |
+|------|------|--------|--------------|
+| 1 | Gym Hero | Max Pulse | Strongest direct gym match with very high energy and support-doc bonuses. |
+| 2 | Storm Runner | Voltline | Excellent high-adrenaline fit with intense mood and driving energy. |
+| 3 | Neon Pulse Circuit | Static Bloom | Strong cardio / dance intensity with high live-energy evidence. |
 
-**Reliability Status:**
-
-- ✅ Grounded: Yes
-- ✅ Consistent: Yes
-- ⚠️ Warnings: None
+**What this shows:** the `spin class cardio guide` support document improves retrieval for workout-like phrasing and helps the system generalize beyond the exact word `gym`.
 
 ---
 
@@ -202,30 +216,28 @@ See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_r
 "Need classical music for an intense workout"
 ```
 
-**System Intent Parsing:**
+**Current System Parsing:**
 
 - Detected genre: `classical`
 - Detected mood: `intense`
-- Target energy: `0.95` (very high)
-- **Conflict detected:** Classical music is rarely high-energy and intense in the catalog
+- Target energy: about `0.93`
+- Conflict remains: the catalog has very thin coverage for `classical + intense workout`
 
-**Top Recommendations (with Genre Safeguard Applied):**
-| Rank | Song | Artist | Genre | Score | Reason |
-|------|------|--------|-------|-------|--------|
-| 1 | Pulse Rush | Electric Beats | EDM | 0.94 | Highest raw score for intense workout; genre does not match explicit request. |
-| 2 | Iron Grip | Power Metal | Metal | 0.91 | Second-best intensity match. |
-| 3 | Glass Morning | Romantic Era | Classical | 0.67 | **Genre coverage safeguard applied.** Classical item included despite lower score to honor explicit genre request. Retrieved evidence: "grand orchestral flourishes," "dramatic intensity." |
+**Current Top Recommendations (with Genre Safeguard Applied):**
+| Rank | Song | Artist | Why It Ranks |
+|------|------|--------|--------------|
+| 1 | Storm Runner | Voltline | Best raw workout/intensity fit in the catalog. |
+| 2 | Gym Hero | Max Pulse | Strong gym match with very high energy. |
+| 3 | Neon Pulse Circuit | Static Bloom | Strong cardio intensity fit. |
+| 5 | Glass Morning | Aurora Vale | Reinserted by the genre-coverage safeguard so the explicit classical request is not silently dropped. |
 
 **Reliability Status:**
 
-- ⚠️ Grounded: Partially (categorical mismatch)
-- ⚠️ Consistent: Yes (but with low confidence)
-- 🚨 **Warnings:**
-  - `"Thin catalog support for classical + intense: only 1 matching song."`
-  - `"Genre coverage safeguard applied: classical request honored despite score penalty."`
-  - `"User may be better served by relaxing the genre constraint or choosing a different intensity level."`
+- ✅ Grounded: Yes
+- ✅ Consistent: Yes
+- 🚨 **Warning:** `"the requested genre and energy combination has very thin catalog support"`
 
-**Key insight:** Instead of silently ignoring the genre request or failing to respond, the system _exposes the tradeoff_ and warns the user. This is a hallmark of responsible AI design.
+**Key insight:** Instead of silently ignoring the genre request, the system exposes the tradeoff and keeps a classical item in the list through the safeguard. This is a hallmark of responsible AI design.
 
 ---
 
@@ -291,13 +303,14 @@ See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_r
 
 ## Reliability and Evaluation
 
-**Short summary:** `11/11` automated tests passed with `pytest tests/ -v`, and the `4/4` benchmark prompts in `python -m src.main reliability` produced the expected hits, warning behavior, grounding, and consistency results. The system is strongest when the request overlaps with known catalog tags like `coding`, `gym`, or `journaling`, and weaker when the phrasing is semantically similar but not lexically matched because retrieval is rule-based and the catalog is small.
+**Short summary:** `14/14` automated tests passed with `pytest tests/ -v`, the `4/4` benchmark prompts in `python -m src.main reliability` produced the expected hits, warning behavior, grounding, and consistency results, and the optional feature harness in `python -m src.main evaluate` improved multi-source `hit@3` from `5/7` to `7/7`. The system is strongest when the request overlaps with known catalog tags like `coding`, `gym`, or `journaling`, and the added support documents now help on synonym-heavy prompts that used to fall back to generic happy-pop recommendations.
 
 ### How I Tested It
 
-- **Automated tests:** `tests/test_recommender.py` and `tests/test_music_ai_system.py` verify parsing, ranking, genre safeguards, benchmark behavior, and JSON log writing.
+- **Automated tests:** `tests/test_recommender.py`, `tests/test_music_ai_system.py`, and `tests/test_optional_features.py` verify parsing, ranking, genre safeguards, support-document retrieval, trace generation, specialization output, benchmark behavior, and JSON log writing.
 - **Consistency check:** `run_music_ai_system()` reruns the same query once and compares the recommendation IDs to confirm stable output for the deterministic pipeline.
 - **Logging:** each run can write a JSON trace to `logs/music_ai_runs/` with the parsed intent, retrieved evidence, final recommendations, and reliability warnings.
+- **Feature harness:** `python -m src.main evaluate` compares single-source retrieval against the enhanced multi-source version on a fixed set of prompts and prints summary metrics.
 - **Human evaluation:** I manually reviewed the coding, workout, journaling, and conflicting-genre outputs to check that the explanations matched the returned songs.
 
 ### What Worked
@@ -316,8 +329,10 @@ See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_r
 
 ### Concrete Results
 
-- `11/11` tests passed locally.
+- `14/14` tests passed locally.
 - `4/4` benchmark scenarios passed locally.
+- The optional evaluation harness improved multi-source `hit@3` from `5/7` to `7/7`.
+- Specialized explanation compliance was `100%` across the evaluation set.
 - JSON logging worked for both test runs and CLI runs.
 - The main failure mode is missing or weak lexical context, not code crashes.
 
@@ -363,17 +378,25 @@ applied-ai-system-project/
 ├── src/
 │   ├── __init__.py
 │   ├── main.py                        # CLI entry point; runs demo profiles and benchmarks
+│   ├── evaluation.py                  # Optional-feature evaluation harness and summary metrics
 │   ├── music_ai_system.py             # Core pipeline: parser → retrieval → ranking → reliability
 │   └── recommender.py                 # Transparent scoring rules and metadata engine
+│
+├── scripts/
+│   └── run_feature_evaluation.py      # Standalone wrapper for the evaluation harness
 │
 ├── tests/
 │   ├── conftest.py                    # Pytest fixtures
 │   ├── test_music_ai_system.py        # Integration tests for full pipeline
+│   ├── test_optional_features.py      # Tests for support docs, trace steps, and specialization
 │   └── test_recommender.py            # Unit tests for ranking and scoring
 │
 ├── data/
 │   ├── songs.csv                      # Catalog metadata (18 songs)
-│   └── song_knowledge_base.json       # Retrieval evidence and scene descriptions
+│   ├── song_knowledge_base.json       # Retrieval evidence and scene descriptions
+│   ├── query_support_documents.json   # Query-level support docs for the enhanced retriever
+│   ├── style_cards.json               # Constrained explanation styles
+│   └── evaluation_queries.json        # Fixed evaluation prompts for the harness
 │
 ├── logs/
 │   └── music_ai_runs/                 # JSON trace logs from each run
@@ -394,6 +417,36 @@ python -m src.main
 ```
 
 This prints the full demo: 4 evaluation profiles with recommendations, retrieval details, benchmark results, and reliability checks.
+
+### Apple-Style Demo UI
+
+```bash
+streamlit run streamlit_app.py
+```
+
+This launches a polished frontend for live demos of:
+
+- natural-language querying
+- multi-source retrieval
+- specialized explanation styles
+- observable agent traces
+- reliability and evaluation views
+
+### Query With Observable Trace
+
+```bash
+python -m src.main query "Need something for debugging at 1am" --show-trace
+```
+
+This prints the intermediate agent-style steps, the matched support documents, and the final recommendations.
+
+### Query With Specialized Explanations
+
+```bash
+python -m src.main query "Need something for debugging at 1am" --specialization auto
+```
+
+This adds constrained listener-facing explanations such as `Focus Coach`, `Hype Trainer`, or `Reflective Curator`.
 
 ### With Logging
 
@@ -416,6 +469,26 @@ pytest tests/ -v
 python -c "from src.music_ai_system import run_reliability_suite; \
 run_reliability_suite()"
 ```
+
+### Evaluate Optional Features
+
+```bash
+python -m src.main evaluate
+```
+
+or
+
+```bash
+python scripts/run_feature_evaluation.py
+```
+
+This compares:
+
+- baseline single-source retrieval
+- enhanced multi-source retrieval
+- average confidence
+- trace-step visibility
+- specialization compliance
 
 ---
 

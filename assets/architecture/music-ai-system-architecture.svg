@@ -60,11 +60,11 @@
 
   <rect class="data" x="710" y="326" width="280" height="188" rx="18" />
   <text class="meta" x="736" y="356">STEP 2</text>
-  <text class="label" x="736" y="388">Retriever</text>
+  <text class="label" x="736" y="388">Multi-Source Retriever</text>
   <text class="body" x="736" y="420">Matches parsed intent</text>
-  <text class="body" x="736" y="444">to evidence using tags,</text>
-  <text class="body" x="736" y="468">mood, genre, and energy cues.</text>
-  <text class="small" x="736" y="492">`retrieve_song_evidence()`</text>
+  <text class="body" x="736" y="444">to song evidence and support</text>
+  <text class="body" x="736" y="468">docs using tags, mood, and energy cues.</text>
+  <text class="small" x="736" y="492">`retrieve_song_evidence()` + support docs</text>
 
   <rect class="process" x="1050" y="326" width="300" height="188" rx="18" />
   <text class="meta" x="1076" y="356">STEP 3</text>
@@ -77,16 +77,16 @@
   <rect class="process" x="1410" y="326" width="300" height="188" rx="18" />
   <text class="meta" x="1436" y="356">STEP 4</text>
   <text class="label" x="1436" y="388">Fusion and Reranking</text>
-  <text class="body" x="1436" y="420">Adds retrieval bonuses,</text>
-  <text class="body" x="1436" y="444">applies diversity penalties,</text>
+  <text class="body" x="1436" y="420">Adds retrieval and support-doc</text>
+  <text class="body" x="1436" y="444">bonuses, applies diversity penalties,</text>
   <text class="body" x="1436" y="468">and preserves genre intent.</text>
   <text class="small" x="1436" y="492">`recommend_songs(...)` + safeguard</text>
 
   <rect class="decision" x="1770" y="306" width="320" height="228" rx="18" />
   <text class="meta" x="1796" y="336">STEP 5</text>
   <text class="label" x="1796" y="368">Reliability Check</text>
-  <text class="body" x="1796" y="400">Grounds explanations</text>
-  <text class="body" x="1796" y="424">with retrieved evidence,</text>
+  <text class="body" x="1796" y="400">Grounds explanations,</text>
+  <text class="body" x="1796" y="424">records agent trace steps,</text>
   <text class="body" x="1796" y="448">reruns the pipeline for</text>
   <text class="body" x="1796" y="472">consistency, and warns</text>
   <text class="body" x="1796" y="496">about thin catalog coverage.</text>
@@ -101,16 +101,16 @@
 
   <rect class="data" x="740" y="570" width="280" height="164" rx="18" />
   <text class="meta" x="766" y="600">DATA SOURCE</text>
-  <text class="label" x="766" y="632">Knowledge Base</text>
-  <text class="body" x="766" y="664">Evidence text, activity tags,</text>
-  <text class="body" x="766" y="688">scene notes, and caution context.</text>
-  <text class="small" x="766" y="714">`data/song_knowledge_base.json`</text>
+  <text class="label" x="766" y="632">Knowledge Sources</text>
+  <text class="body" x="766" y="664">Song evidence, activity tags,</text>
+  <text class="body" x="766" y="688">support docs, and caution context.</text>
+  <text class="small" x="766" y="714">`song_knowledge_base.json` + support docs</text>
 
   <rect class="output" x="1170" y="570" width="900" height="164" rx="18" />
   <text class="meta" x="1198" y="600">OUTPUT</text>
   <text class="label" x="1198" y="630">Recommendations, Evidence,</text>
   <text class="label" x="1198" y="654">Reliability Summary, and Run Log</text>
-  <text class="body" x="1198" y="682">Terminal output includes ranked songs, explanation strings, retrieved evidence, and warnings.</text>
+  <text class="body" x="1198" y="682">Terminal output includes ranked songs, explanation strings, retrieved evidence, specialized styles, and warnings.</text>
   <text class="body" x="1198" y="706">Each run is also logged as a JSON trace in `logs/music_ai_runs/*.json`.</text>
   <text class="small" x="1198" y="728">Main orchestrator: `run_music_ai_system()`</text>
 

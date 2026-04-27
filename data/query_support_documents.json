@@ -1,0 +1,58 @@
+[
+  {
+    "document_id": "night_debug_focus",
+    "title": "Late-Night Debugging Playbook",
+    "keywords": ["debugging", "bugfix", "deep work", "heads-down", "1am", "late night"],
+    "activity_tags": ["coding", "focus", "late-night"],
+    "desired_tags": ["focused", "steady", "calm"],
+    "target_energy": 0.34,
+    "likes_acoustic": true,
+    "mode": "mood_first",
+    "evidence": [
+      "Maps debugging, heads-down work, and late-night phrasing to the same low-distraction profile used for coding sessions.",
+      "Best when the listener wants steady concentration rather than emotional peaks or vocal intensity."
+    ]
+  },
+  {
+    "document_id": "spin_class_cardio",
+    "title": "Spin Class Cardio Guide",
+    "keywords": ["spin class", "hiit", "intervals", "cardio", "sprints", "push pace"],
+    "activity_tags": ["workout", "gym", "drive"],
+    "desired_tags": ["energetic", "motivational", "driving"],
+    "target_energy": 0.93,
+    "likes_acoustic": false,
+    "mode": "energy_focused",
+    "evidence": [
+      "Treats spin, HIIT, and interval language as a high-output workout request even when the word gym never appears.",
+      "Prefers tracks with strong motion cues, clear drive, and minimal acoustic softness."
+    ]
+  },
+  {
+    "document_id": "decompress_after_work",
+    "title": "After-Work Reset Notes",
+    "keywords": ["decompress", "after work", "reset", "wind down", "exhale", "unwind"],
+    "activity_tags": ["late-night", "reflection", "unwind"],
+    "desired_tags": ["relaxed", "smooth", "calm"],
+    "target_energy": 0.29,
+    "likes_acoustic": true,
+    "mode": "mood_first",
+    "evidence": [
+      "Converts recovery language into a gentle evening profile instead of leaving the query as a generic happy request.",
+      "Useful when the listener wants to settle, recover, or lower stimulation after a long day."
+    ]
+  },
+  {
+    "document_id": "memory_lane_scrapbook",
+    "title": "Memory-Lane Scrapbooking Guide",
+    "keywords": ["memory lane", "scrapbooking", "photo album", "keepsakes", "scrapbook"],
+    "activity_tags": ["journaling", "reflection", "nostalgia"],
+    "desired_tags": ["nostalgic", "acoustic", "warm"],
+    "target_energy": 0.27,
+    "likes_acoustic": true,
+    "mode": "mood_first",
+    "evidence": [
+      "Links scrapbook and memory-lane language to the same reflective acoustic profile used for journaling.",
+      "Best for human, cozy, story-rich listening rather than neutral background music."
+    ]
+  }
+]
