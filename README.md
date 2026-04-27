@@ -102,7 +102,7 @@ Required packages:
 Check that these files are present:
 
 ```bash
-data/songs.csv                    # 50+ songs with structured metadata
+data/songs.csv                    # 18 songs with structured metadata
 data/song_knowledge_base.json     # Retrieval evidence for each song
 ```
 
@@ -323,59 +323,31 @@ See [20260425-012813-need-calm-music-for-late-night-coding.json](logs/music_ai_r
 
 ---
 
-## Reflection: What This Project Taught Me
+## Reflection and Ethics
 
-### About AI System Design
+This project pushed me to think about AI as a system that should be honest about its limits, not just good at producing plausible outputs. The final version is better than the earlier prototype because it does more than rank songs: it parses a natural-language request, retrieves supporting evidence, explains its choices, and warns when the catalog is weak.
 
-The biggest revelation was that **"intelligent" doesn't mean "complicated."** The first version of this project was a ranking script. The final version feels much more like real AI, not because the scoring math got fancier, but because I added _structure_ around the score:
+### Limitations and Biases
 
-1. A parser that turns messy user language into explicit preferences
-2. A retrieval layer that brings in richer evidence
-3. A safeguard that honors conflicting requests instead of silently ignoring them
-4. A warning system that admits when the catalog is weak
-5. Tests that verify the system keeps behaving the way I claim
+- The catalog is small and hand-curated, so the system reflects my own tagging choices and genre coverage gaps.
+- Retrieval is lexical rather than semantic, which means phrasing matters a lot. A request using unfamiliar wording may perform worse even if the intent is reasonable.
+- The recommender is not personalized. It does not learn from user history, which keeps it simpler and more transparent, but also less adaptive.
 
-That _structure_ is what made the system trustworthy. More features aren't automatically better; the right abstractions are.
+### Misuse and Prevention
 
-### About Explainability and Trust
+This system could be misused if someone treated it like an authority on a user's mood, identity, or mental state. It should only be used as a transparent music recommendation helper, not as a tool for psychological inference or manipulation. To reduce misuse, I kept the scope narrow, surfaced warnings for weak matches, included evidence in the explanations, and saved logs so a human can review how the result was produced.
 
-The conflicting request case (classical + intense workout) was the most instructive moment. A naive recommender would rank high-energy pop at the top and silently ignore the classical request. Adding the genre safeguard made the system _honest_ about the tradeoff. Instead of hiding the conflict, it surfaces it:
+### What Surprised Me During Reliability Testing
 
-> "Genre coverage safeguard applied. We included a classical piece despite lower score to honor your explicit preference. Be aware this catalog has thin classical + intense coverage."
+The most surprising result was how stable the system was on well-covered requests like coding or gym prompts, and how quickly its weaknesses showed up on thin or contradictory requests. I expected the scoring formula to be the hardest part, but the bigger issue was data coverage and vocabulary mismatch. Testing made it clear that reliability depends as much on the dataset and retrieval rules as on the ranking logic.
 
-That transparency felt closer to responsible AI than silently choosing for the user.
+### Collaboration With AI
 
-### About Testing and Verification
-
-The reliability layer (rerunning the same query and checking consistency) was valuable not just for catching bugs, but for _understanding_ the system's behavior:
-
-- Well-grounded queries (coding, workouts) produce stable rankings
-- Thin-catalog queries show wobbling rankings, which triggers a warning
-- This distinction emerged naturally from testing, not by design
-
-That's more powerful than a single "confidence score"—the system shows its own uncertainty through instability detection.
-
-### Limits I Still See
-
-- **Catalog is hand-curated.** This makes it fully transparent but not scalable. Production systems would need hundreds of songs, which means automated tagging.
-- **Retrieval is lexical, not semantic.** "Music for de-stressing" won't match "relaxation" despite the semantic similarity. Embeddings would help but reduce explainability.
-- **No user personalization.** The system doesn't learn from feedback or history. It's stateless—every query is answered the same way by the same rules.
-- **No visual interface.** A future version should let users review recommendations, flag poor results, and adjust preferences interactively.
-
-### What I'd Do Next
-
-If I continued this project:
-
-1. **Expand the catalog** to 500+ songs with automated genre/mood tagging
-2. **Add embedding-based retrieval** (but keep the lexical layer for transparency)
-3. **Build a simple web UI** (Streamlit or React) for interactive exploration
-4. **Track user interactions** and analyze which queries are hard to answer
-5. **Implement online learning** so the system adapts over time while remaining interpretable
-6. **Benchmark against commercial systems** (Spotify, Apple Music) to understand what's missing
+I used AI as a pair-programming and writing assistant throughout the project. One helpful suggestion was to treat the system as a pipeline with separate parsing, retrieval, ranking, and reliability steps, which made the code easier to test and the behavior easier to explain. One flawed suggestion was an earlier AI-generated draft that described sample outputs and a stronger reliability process than the code actually produced; that mistake reminded me to verify AI suggestions against real runs, tests, and logs before trusting them.
 
 ### Key Takeaway
 
-This project taught me that **AI systems don't have to choose between being smart and being trustworthy.** By combining retrieval, explicit reasoning, self-checks, and honest warnings about limitations, you can build systems that are both intelligent _and_ inspectable. That's the kind of AI that future employers (and society) actually want to deploy.
+The biggest lesson from this project is that responsible AI is not just about making a system look smart. It is about making its behavior inspectable, testable, and appropriately limited. In practice, that meant building warnings, logs, and verification into the project instead of hiding uncertainty behind polished recommendations.
 
 ---
 
@@ -400,7 +372,7 @@ applied-ai-system-project/
 │   └── test_recommender.py            # Unit tests for ranking and scoring
 │
 ├── data/
-│   ├── songs.csv                      # Catalog metadata (50+ songs)
+│   ├── songs.csv                      # Catalog metadata (18 songs)
 │   └── song_knowledge_base.json       # Retrieval evidence and scene descriptions
 │
 ├── logs/
@@ -408,7 +380,7 @@ applied-ai-system-project/
 │
 └── assets/
     ├── architecture/                  # System diagram (PNG and SVG)
-    └── screenshots/                   # Example CLI outputs
+    └── screenshots/                   # Optional example CLI outputs
 ```
 
 ---
