@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="180" y1="80" x2="1360" y2="820" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0E1726"/>
+      <stop offset="1" stop-color="#050913"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1260 170) rotate(120) scale(300 300)">
+      <stop stop-color="#0A84FF" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#0A84FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(300 770) rotate(-20) scale(360 220)">
+      <stop stop-color="#30D158" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#30D158" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" rx="36" fill="url(#bg)"/>
+  <rect width="1600" height="900" rx="36" fill="url(#glowA)"/>
+  <rect width="1600" height="900" rx="36" fill="url(#glowB)"/>
+
+  <rect x="98" y="88" width="1404" height="724" rx="34" fill="#0C1320" stroke="rgba(255,255,255,0.12)"/>
+
+  <text x="150" y="180" fill="#8FD1FF" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" letter-spacing="4">LOOM WALKTHROUGH</text>
+  <text x="150" y="270" fill="#F5F7FB" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700">VibeFinder 2.0 Demo</text>
+  <text x="150" y="334" fill="#AAB7C9" font-family="Arial, Helvetica, sans-serif" font-size="30">Click to watch the full platform walkthrough and end-to-end demo.</text>
+
+  <rect x="150" y="410" width="520" height="220" rx="28" fill="#111B2B" stroke="rgba(255,255,255,0.08)"/>
+  <circle cx="410" cy="520" r="74" fill="#0A84FF"/>
+  <polygon points="390,476 390,564 460,520" fill="#F5F7FB"/>
+  <text x="150" y="690" fill="#DDE6F2" font-family="Arial, Helvetica, sans-serif" font-size="28">Includes platform tour, live example query, recommendations, retrieval, and reliability views.</text>
+
+  <rect x="1080" y="456" width="280" height="76" rx="38" fill="#0A84FF"/>
+  <text x="1170" y="505" fill="#F5F7FB" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700">Watch Video</text>
+
+  <rect x="1010" y="190" width="350" height="170" rx="28" fill="#101A2A" stroke="rgba(255,255,255,0.08)"/>
+  <text x="1050" y="255" fill="#8FD1FF" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">What it covers</text>
+  <text x="1050" y="302" fill="#DDE6F2" font-family="Arial, Helvetica, sans-serif" font-size="24">Natural-language query</text>
+  <text x="1050" y="338" fill="#DDE6F2" font-family="Arial, Helvetica, sans-serif" font-size="24">Retrieval and ranking</text>
+  <text x="1050" y="374" fill="#DDE6F2" font-family="Arial, Helvetica, sans-serif" font-size="24">Reliability and trace steps</text>
+</svg>

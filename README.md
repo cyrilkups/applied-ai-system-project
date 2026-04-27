@@ -6,6 +6,23 @@
 
 ---
 
+## Platform Banner
+
+![VibeFinder platform banner](assets/screenshots/platform-banner.png)
+
+## Presentation Slides
+
+[![VibeFinder presentation slides preview](assets/slides/codepath-course-project-slides-preview.png)](assets/slides/codepath-course-project-slides.pdf)
+
+**Click the slide preview to open the full presentation PDF.**
+
+## Loom Walkthrough Video
+
+[![Watch the Loom walkthrough video](assets/screenshots/loom-walkthrough-thumbnail.svg)](https://www.loom.com/share/3806cfedff7f41dd978931972a3f70ff)
+
+**Click the video preview to watch the Loom walkthrough.**
+
+
 ## What This Project Does and Why It Matters
 
 **VibeFinder 2.0** transforms the earlier recommender into a **real-world applied AI system** by adding natural-language understanding, retrieval-augmented reasoning, and built-in reliability checks. Instead of requiring users to fill out structured forms, the system now accepts conversational requests like:
@@ -377,7 +394,10 @@ applied-ai-system-project/
 ├── README.md                          # This file
 ├── model_card.md                      # Formal model documentation
 ├── reflection.md                      # Developer reflection on lessons learned
+├── Slide.md                           # Slide content and speaking notes
+├── Recording.md                       # Loom walkthrough speaking guide
 ├── requirements.txt                   # Python dependencies
+├── streamlit_app.py                   # Streamlit frontend demo
 │
 ├── src/
 │   ├── __init__.py
@@ -407,7 +427,9 @@ applied-ai-system-project/
 │
 └── assets/
     ├── architecture/                  # System diagram (PNG and SVG)
-    └── screenshots/                   # Optional example CLI outputs
+    ├── demos/                         # Demo screenshots / CLI output SVGs
+    ├── screenshots/                   # Platform banner and README visuals
+    └── slides/                        # Presentation PDF and preview image
 ```
 
 ---
@@ -606,7 +628,15 @@ The system is designed to be inspectable and cautious:
 assets/
   architecture/
     music-ai-system-architecture.svg
+  demos/
+    chill-lofi.svg
+    cli-output.svg
   screenshots/
+    platform-banner.png
+    loom-walkthrough-thumbnail.svg
+  slides/
+    codepath-course-project-slides.pdf
+    codepath-course-project-slides-preview.png
 data/
   songs.csv
   song_knowledge_base.json
@@ -620,9 +650,12 @@ tests/
   test_music_ai_system.py
   test_recommender.py
 README.md
+Recording.md
+Slide.md
 model_card.md
 reflection.md
 requirements.txt
+streamlit_app.py
 ```
 
 ---
